@@ -15,10 +15,10 @@ It serves Dungeons & Dragons 5th Edition System Reference Document (SRD) content
 
 ## Features
 
-- **Edge Native**: Runs globally on V8 isolates via Azion Edge Functions for ultra-low latency.
+- **Edge Native**: Runs globally on V8 isolates via [Azion Edge Functions](https://www.azion.com/en/products/edge-functions/) for ultra-low latency.
 - **Auto-Translation**: Automatically translates spells into requested locales using Hugging Face Inference endpoints (support for monsters and items is planned for future versions).
 - **Asynchronous Translation Engine**: Prevents edge timeouts by returning partial data immediately while triggering background translations.
-- **Edge SQL Caching**: Caches translated entities (and eventually raw Open5e English strings) directly at the edge in a globally replicated SQLite database.
+- **Edge SQL Caching**: Caches translated entities (and eventually raw Open5e English strings) directly at the edge in a globally replicated SQLite database via [Azion Edge SQL](https://www.azion.com/en/products/edge-sql/).
 
 ## Architecture & Trade-offs
 
@@ -54,6 +54,29 @@ During the design phase of this API, several deliberate architectural choices we
 ## Development
 
 This project uses [pnpm](https://pnpm.io/) as its package manager. If it is not installed, install it globally via `npm install -g pnpm`.
+
+Additionally, deploying and managing this project requires the [Azion CLI](https://www.azion.com/en/documentation/products/azion-cli/overview/).
+Install it and authenticate before deploying:
+
+**For macOS/Linux**:
+
+```bash
+curl -sSfL https://get.azion.com | sh
+```
+
+**For Windows (via Winget)**:
+
+```bash
+winget install aziontech.azion
+```
+
+After installation, log in to your account:
+
+```bash
+azion login
+```
+
+### Setup
 
 Install dependencies:
 

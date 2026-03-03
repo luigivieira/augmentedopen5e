@@ -15,10 +15,10 @@ Sirve contenido del System Reference Document (SRD) de Dungeons & Dragons 5ª Ed
 
 ## Características
 
-- **Edge Native**: Se ejecuta globalmente en aislados V8 (V8 isolates) a través de Azion Edge Functions para una latencia ultrabaja.
+- **Edge Native**: Se ejecuta globalmente en aislados V8 (V8 isolates) a través de [Azion Edge Functions](https://www.azion.com/es/productos/edge-functions/) para una latencia ultrabaja.
 - **Autotraducción**: Traduce automáticamente hechizos al idioma solicitado ("locale") utilizando endpoints de inferencia de Hugging Face (el soporte para monstruos y objetos está planeado para versiones futuras).
 - **Motor de Traducción Asíncrono**: Evita los tiempos de espera (timeouts) en el Edge al devolver datos parciales de inmediato mientras procesa traducciones en segundo plano.
-- **Caché en Edge SQL**: Almacena en caché las entidades traducidas (y posiblemente las cadenas originales en inglés de Open5e) directamente en el borde de la red (edge) a través de una base de datos SQLite replicada globalmente.
+- **Caché en Edge SQL**: Almacena en caché las entidades traducidas (y posiblemente las cadenas originales en inglés de Open5e) directamente en el borde de la red (edge) a través de una base de datos SQLite replicada globalmente mediante [Azion Edge SQL](https://www.azion.com/es/productos/edge-sql/).
 
 ## Arquitectura y Trade-offs (Pros y Contras)
 
@@ -54,6 +54,29 @@ Durante la fase de planificación de esta API, se tomaron decisiones arquitectó
 ## Desarrollo
 
 Este proyecto utiliza [pnpm](https://pnpm.io/) como su administrador de paquetes. Si no está instalado, se puede instalar globalmente mediante `npm install -g pnpm`.
+
+Además, para implementar y administrar este proyecto, es estrictamente necesario tener el entorno [Azion CLI](https://www.azion.com/es/documentacion/productos/azion-cli/vision-general/) instalado y autenticado.
+Para instalar la CLI oficial de Azion:
+
+**Para macOS/Linux**:
+
+```bash
+curl -sSfL https://get.azion.com | sh
+```
+
+**Para Windows (vía Winget)**:
+
+```bash
+winget install aziontech.azion
+```
+
+Después de la instalación, inicie sesión en su cuenta:
+
+```bash
+azion login
+```
+
+### Configuración
 
 Instalar dependencias:
 

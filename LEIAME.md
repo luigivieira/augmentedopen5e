@@ -15,10 +15,10 @@ Ela serve conteúdo do System Reference Document (SRD) de Dungeons & Dragons 5ª
 
 ## Funcionalidades
 
-- **Edge Native**: Roda globalmente em V8 isolates via Azion Edge Functions para latência ultrabaixa.
+- **Edge Native**: Roda globalmente em V8 isolates via [Azion Edge Functions](https://www.azion.com/pt-br/produtos/edge-functions/) para latência ultrabaixa.
 - **Auto-Tradução**: Traduz automaticamente magias para o idioma solicitado ("locale") utilizando endpoints de Inferência do Hugging Face (suporte a monstros e itens está planejado para versões futuras).
 - **Motor de Tradução Assíncrono**: Previne timeouts no Edge retornando dados parciais imediatamente enquanto aciona traduções em background.
-- **Cache em Edge SQL**: Faz o cache das entidades traduzidas (e possivelmente até das strings originais em inglês da Open5e) diretamente na borda (edge) através de num banco de dados SQLite globalmente replicado.
+- **Cache em Edge SQL**: Faz o cache das entidades traduzidas (e possivelmente até das strings originais em inglês da Open5e) diretamente na borda (edge) através de num banco de dados SQLite globalmente replicado utilizando o [Azion Edge SQL](https://www.azion.com/pt-br/produtos/edge-sql/).
 
 ## Arquitetura & Trade-offs (Prós e Contras)
 
@@ -54,6 +54,29 @@ Durante a fase de planejamento desta API, foram tomadas decisões arquiteturais 
 ## Desenvolvimento
 
 Este projeto utiliza o [pnpm](https://pnpm.io/) como gerenciador de pacotes. Caso não o possua, é possível instalá-lo globalmente via `npm install -g pnpm`.
+
+Além disso, para fazer o deploy e gerenciar este projeto, é estritamente necessário ter a [Azion CLI](https://www.azion.com/pt-br/documentacao/produtos/azion-cli/visao-geral/) instalada e autenticada.
+Para instalar o CLI oficial da Azion:
+
+**Para macOS/Linux**:
+
+```bash
+curl -sSfL https://get.azion.com | sh
+```
+
+**Para Windows (via Winget)**:
+
+```bash
+winget install aziontech.azion
+```
+
+Após a instalação, faça o login na sua conta:
+
+```bash
+azion login
+```
+
+### Configuração
 
 Instalar dependências:
 
