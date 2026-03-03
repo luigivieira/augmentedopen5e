@@ -26,7 +26,7 @@ During the design phase of this API, several deliberate architectural choices we
 
 ### 1. Monolith Router vs Micro-Functions
 
-**Decision**: A single API entry point (`src/index.js`) that routes traffic internally, rather than deploying dozens of separate Azion edge functions for each route (`/monsters`, `/spells`, etc.).
+**Decision**: A single API entry point (`src/index.ts`) that routes traffic internally, rather than deploying dozens of separate Azion edge functions for each route (`/monsters`, `/spells`, etc.).
 
 **Trade-offs**:
 

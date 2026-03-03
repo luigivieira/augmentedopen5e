@@ -26,12 +26,12 @@ Durante a fase de planejamento desta API, foram tomadas decisões arquiteturais 
 
 ### 1. Roteador Monolítico vs Micro-Funções (Micro-Functions)
 
-**Decisão**: Um ponto de entrada único (`src/index.js`) que roteia o tráfego internamente, em vez de fazer deploy de dezenas de funções isoladas na Azion para cada rota (`/monsters`, `/spells`, etc.).
+**Decisão**: Um ponto de entrada único (`src/index.ts`) que roteia o tráfego internamente, em vez de fazer deploy de dezenas de funções isoladas na Azion para cada rota (`/monsters`, `/spells`, etc.).
 
 **Trade-offs**:
 
 - **Prós**: Reduz drasticamente os _cold starts_ (inicializações frias), pois qualquer requisição para a API mantém o Isolate do V8 aquecido para todas as outras rotas. Também centraliza os middlewares (como parsing de JSON e tratamento de erros) e reduz muito a complexidade de gerenciar dezenas de deploys pelo Azion CLI.
-- **Contras**: O tamanho final do bundle (`.js`) fica levemente maior do que o de uma função isolada de propósito único, embora o impacto seja nulo para uma engine V8.
+- **Contras**: O tamanho final do bundle (`.ts` transpilado) fica levemente maior do que o de uma função isolada de propósito único, embora o impacto seja nulo para uma engine V8.
 
 ### 2. Azion Edge SQL vs Azion KV Store (Chave-Valor)
 

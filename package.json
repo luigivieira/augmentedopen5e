@@ -2,12 +2,12 @@
   "name": "augmentedopen5e",
   "version": "1.0.0",
   "description": "An Azion Edge Functions API to augment Open5e 5th Edition SRD content with automatic LLM translations.",
-  "main": "src/index.js",
+  "main": "src/index.ts",
   "scripts": {
-    "start": "node src/index.js",
+    "start": "node src/index.ts",
     "test": "vitest",
-    "lint": "eslint src/**/*.js",
-    "format": "prettier --write src/**/*.js",
+    "lint": "eslint \"src/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\"",
     "deploy": "azion deploy"
   },
   "keywords": [
@@ -24,9 +24,13 @@
   "author": "Vieira",
   "license": "MIT",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.3.3",
     "eslint": "^9.0.0",
+    "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.2.5",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1",
     "vitest": "^2.0.0"
-  },
-  "dependencies": {}
+  }
 }

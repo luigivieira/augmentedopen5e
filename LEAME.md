@@ -26,12 +26,12 @@ Durante la fase de planificación de esta API, se tomaron decisiones arquitectó
 
 ### 1. Enrutador Monolítico vs Microfunciones
 
-**Decisión**: Un único punto de entrada (`src/index.js`) que enruta el tráfico internamente, en lugar de implementar decenas de funciones de Azion aisladas para cada ruta (`/monsters`, `/spells`, etc.).
+**Decisión**: Un único punto de entrada (`src/index.ts`) que enruta el tráfico internamente, en lugar de implementar decenas de funciones de Azion aisladas para cada ruta (`/monsters`, `/spells`, etc.).
 
 **Trade-offs**:
 
 - **Pros**: Reduce drásticamente los _cold starts_ (inicios en frío), ya que cualquier solicitud a la API mantiene el aislado V8 "caliente" para todas las demás rutas. También centraliza el middleware (como el análisis de JSON y el manejo de errores) y simplifica enormemente el despliegue a través de Azion CLI.
-- **Contras**: El tamaño final del archivo (`.js` empaquetado) es ligeramente mayor que el de una función de propósito único, aunque el impacto es insignificante para el entorno V8.
+- **Contras**: El tamaño final del archivo (`.ts` empaquetado) es ligeramente mayor que el de una función de propósito único, aunque el impacto es insignificante para el entorno V8.
 
 ### 2. Azion Edge SQL vs Azion KV Store (Clave-Valor)
 
