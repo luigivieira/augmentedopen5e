@@ -10,7 +10,7 @@ Uma API REST open-source (Licença MIT) deployada no **Azion Edge Functions** qu
 
 Ela serve conteúdo do System Reference Document (SRD) de Dungeons & Dragons 5ª Edição e o estende automaticamente com traduções geradas por Inteligência Artificial (LLMs da Hugging Face) para diferentes idiomas.
 
-> [!CAUTION]
+> [!WARNING]
 > **Aviso sobre Direitos Autorais:** Este projeto baseia-se inteiramente no SRD (System Reference Document) de D&D 5e, que é disponibilizado sob licença Creative Commons (CC-BY). **As traduções fornecidas por esta API são estritamente geradas por máquina (via IA/LLMs) sob demanda e NÃO SÃO traduções oficiais.** Este projeto não é afiliado, endossado ou criado com o intuito de reproduzir as obras traduzidas protegidas por direitos autorais da Wizards of the Coast ou de qualquer um de seus parceiros locais de publicação.
 
 ## Funcionalidades
@@ -53,23 +53,25 @@ Durante a fase de planejamento desta API, foram tomadas decisões arquiteturais 
 
 ## Desenvolvimento
 
+Este projeto utiliza o [pnpm](https://pnpm.io/) como gerenciador de pacotes. Caso não o possua, é possível instalá-lo globalmente via `npm install -g pnpm`.
+
 Instalar dependências:
 
 ```bash
-npm install
+pnpm install
 ```
 
 Formatação e Linter:
 
 ```bash
-npm run format
-npm run lint
+pnpm format
+pnpm lint
 ```
 
 Deploy para Azion (requer Azion CLI instalada):
 
 ```bash
-npm run deploy
+pnpm deploy
 ```
 
 ## Licença

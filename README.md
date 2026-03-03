@@ -53,23 +53,25 @@ During the design phase of this API, several deliberate architectural choices we
 
 ## Development
 
+This project uses [pnpm](https://pnpm.io/) as its package manager. If it is not installed, install it globally via `npm install -g pnpm`.
+
 Install dependencies:
 
 ```bash
-npm install
+pnpm install
 ```
 
 Format and Lint:
 
 ```bash
-npm run format
-npm run lint
+pnpm format
+pnpm lint
 ```
 
 Deploying to Azion (requires Azion CLI):
 
 ```bash
-npm run deploy
+pnpm deploy
 ```
 
 ## License
