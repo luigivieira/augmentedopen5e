@@ -25,7 +25,7 @@ Durante la fase de planificación de esta API, se tomaron decisiones arquitectó
 
 ### 1. Enrutador Monolítico vs Microfunciones
 
-**Decisión**: Un único punto de entrada (`src/index.ts`) que enruta el tráfico internamente, en lugar de implementar decenas de funciones de Azion aisladas para cada ruta (`/monsters`, `/spells`, etc.).
+**Decisión**: Un único punto de entrada (`index.ts`) que enruta el tráfico internamente, en lugar de implementar decenas de funciones de Azion aisladas para cada ruta (`/monsters`, `/spells`, etc.).
 
 **Trade-offs**:
 
@@ -89,6 +89,24 @@ Formatear y Lint:
 pnpm format
 pnpm lint
 ```
+
+### Emulación Local
+
+Puedes emular localmente el entorno de Azion Edge Functions para probar cambios antes de implementar.
+
+1. **Inicia el Emulador:**
+
+   ```bash
+   pnpm emulate
+   ```
+
+   Este comando levanta un servidor local que simula el entorno Edge (`azion dev`).
+
+2. **Prueba la API Local:**
+   Para verificar que la API funciona localmente y probar la consulta hacia Open5e usando el endpoint `/api/test`:
+   ```bash
+   curl http://localhost:3000/api/test?slug=fireball
+   ```
 
 Desplegar en Azion (requiere Azion CLI):
 

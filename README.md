@@ -25,7 +25,7 @@ During the design phase of this API, several deliberate architectural choices we
 
 ### 1. Monolith Router vs Micro-Functions
 
-**Decision**: A single API entry point (`src/index.ts`) that routes traffic internally, rather than deploying dozens of separate Azion edge functions for each route (`/monsters`, `/spells`, etc.).
+**Decision**: A single API entry point (`index.ts`) that routes traffic internally, rather than deploying dozens of separate Azion edge functions for each route (`/monsters`, `/spells`, etc.).
 
 **Trade-offs**:
 
@@ -89,6 +89,24 @@ Format and Lint:
 pnpm format
 pnpm lint
 ```
+
+### Local Emulation
+
+You can emulate the Azion Edge Functions environment locally to test changes before deploying.
+
+1. **Start the Emulator:**
+
+   ```bash
+   pnpm emulate
+   ```
+
+   This command starts a local server mimicking the Edge environment (`azion dev`).
+
+2. **Test the Local API:**
+   To verify the API is running locally and testing the Open5e upstream fetch with the `/api/test` endpoint:
+   ```bash
+   curl http://localhost:3000/api/test?slug=fireball
+   ```
 
 Deploying to Azion (requires Azion CLI):
 

@@ -25,7 +25,7 @@ Durante a fase de planejamento desta API, foram tomadas decisões arquiteturais 
 
 ### 1. Roteador Monolítico vs Micro-Funções (Micro-Functions)
 
-**Decisão**: Um ponto de entrada único (`src/index.ts`) que roteia o tráfego internamente, em vez de fazer deploy de dezenas de funções isoladas na Azion para cada rota (`/monsters`, `/spells`, etc.).
+**Decisão**: Um ponto de entrada único (`index.ts`) que roteia o tráfego internamente, em vez de fazer deploy de dezenas de funções isoladas na Azion para cada rota (`/monsters`, `/spells`, etc.).
 
 **Trade-offs**:
 
@@ -89,6 +89,24 @@ Formatação e Linter:
 pnpm format
 pnpm lint
 ```
+
+### Emulação Local
+
+Você pode emular o ambiente do Azion Edge Functions localmente para testar alterações antes do deploy.
+
+1. **Inicie o Emulador:**
+
+   ```bash
+   pnpm emulate
+   ```
+
+   Este comando executa um servidor local que emula o ambiente de Edge (`azion dev`).
+
+2. **Teste a API Local:**
+   Para atestar que a API está rodando localmente e testar o roteamento base chamando a Open5e com `/api/test`:
+   ```bash
+   curl http://localhost:3000/api/test?slug=fireball
+   ```
 
 Deploy para Azion (requer Azion CLI instalada):
 

@@ -1,12 +1,12 @@
 {
   "name": "augmentedopen5e",
+  "type": "module",
   "version": "1.0.0",
   "description": "An Azion Edge Functions API to augment Open5e 5th Edition SRD content with automatic LLM translations.",
-  "main": "src/index.ts",
+  "main": "index.ts",
   "scripts": {
-    "start": "node src/index.ts",
     "test": "vitest",
-    "test:local": "pnpm dlx tsx src/index.ts",
+    "emulate": "azion dev",
     "lint": "eslint \"src/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\"",
     "deploy": "azion deploy"
