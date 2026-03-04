@@ -90,11 +90,23 @@ pnpm format
 pnpm lint
 ```
 
-### Local Emulation
+### Developing and Testing
 
-You can emulate the Azion Edge Functions environment locally to test changes before deploying.
+#### Unit Tests
+
+We use Vitest for unit testing. To run the test suite:
+
+```bash
+pnpm test
+```
+
+#### Local Emulation & Documentation
+
+You can emulate the Azion Edge Functions environment locally to test changes through an interactive Scalar UI before deploying.
 
 1. **Start the Emulator:**
+
+   In your first terminal, run:
 
    ```bash
    pnpm emulate
@@ -102,11 +114,15 @@ You can emulate the Azion Edge Functions environment locally to test changes bef
 
    This command starts a local server mimicking the Edge environment (`azion dev`).
 
-2. **Test the Local API:**
-   To verify the API is running locally and testing the Open5e upstream fetch with the `/api/test` endpoint:
+2. **Open the Interactive API Docs:**
+
+   In a second terminal, run:
+
    ```bash
-   curl http://localhost:3000/api/test?slug=fireball
+   pnpm open
    ```
+
+   This will automatically open your default browser at `http://localhost:3333/docs` where you can view the specification and test endpoints directly.
 
 Deploying to Azion (requires Azion CLI):
 

@@ -90,11 +90,23 @@ pnpm format
 pnpm lint
 ```
 
-### Emulación Local
+### Desarrollo y Pruebas
 
-Puedes emular localmente el entorno de Azion Edge Functions para probar cambios antes de implementar.
+#### Pruebas Unitarias
+
+Utilizamos Vitest para las pruebas unitarias. Para ejecutar la suite de pruebas:
+
+```bash
+pnpm test
+```
+
+#### Emulación Local y Documentación
+
+Puedes emular localmente el entorno de Azion Edge Functions para probar cambios a través de una interfaz interactiva Scalar antes de implementar.
 
 1. **Inicia el Emulador:**
+
+   En una primera terminal, ejecuta:
 
    ```bash
    pnpm emulate
@@ -102,11 +114,15 @@ Puedes emular localmente el entorno de Azion Edge Functions para probar cambios 
 
    Este comando levanta un servidor local que simula el entorno Edge (`azion dev`).
 
-2. **Prueba la API Local:**
-   Para verificar que la API funciona localmente y probar la consulta hacia Open5e usando el endpoint `/api/test`:
+2. **Abre la Documentación de la API:**
+
+   En una segunda terminal, ejecuta:
+
    ```bash
-   curl http://localhost:3000/api/test?slug=fireball
+   pnpm open
    ```
+
+   Esto abrirá automáticamente tu navegador en `http://localhost:3333/docs`, donde podrás visualizar la especificación y probar directamente los endpoints.
 
 Desplegar en Azion (requiere Azion CLI):
 

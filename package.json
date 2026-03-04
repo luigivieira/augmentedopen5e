@@ -7,6 +7,7 @@
   "scripts": {
     "test": "vitest",
     "emulate": "azion dev",
+    "open": "pnpm dlx open-cli http://localhost:3333/docs",
     "lint": "eslint \"src/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\"",
     "deploy": "azion deploy"
