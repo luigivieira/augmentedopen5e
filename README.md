@@ -34,7 +34,7 @@ During the design phase of this API, several deliberate architectural choices we
 
 ### 2. Azion Edge SQL vs Azion KV Store
 
-**Decision**: Azion Edge SQL (Distributed SQLite) is used rather than the Azion KV Store (Key-Value) for the caching layer.
+**Decision**: Azion Edge SQL (Distributed SQLite) is chosen over the Azion KV Store for the primary caching and translation storage layer.
 
 **Trade-offs**:
 

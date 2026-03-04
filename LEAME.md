@@ -38,8 +38,8 @@ Durante la fase de planificación de esta API, se tomaron decisiones arquitectó
 
 **Trade-offs**:
 
-- **Pros**: **Flexibilidad en la paginación.** Si se usara un KV Store, consultar una lista paginada de hechizos (`/api/spells?page=2`) requeriría almacenar en caché _la respuesta completa de esa página_ como una sola cadena. Si el usuario luego agrega un filtro o cambia el tamaño de la página, el caché de la página se rompe. Con Edge SQL, se almacena la caché de traducciones a nivel de **Entidad** (ej., `slug: acid-arrow_es-es`). Se puede ejecutar un comando rápido `SELECT * WHERE slug IN (...)`, lo que permite consultas API dinámicas y robustas que se adaptan a cualquier variación de lista y paginación original.
-- **Contras**: El almacenamiento SQL requiere un poco más de configuración inicial en comparación con los comandos simples `get` / `put` de una base de datos NoSQL clave-valor.
+- **Pros**: **Flexibilidad en la paginación.** Si se usara un KV Store, consultar una lista paginada de hechizos (`/api/spells?page=2`) requeriría almacenar en caché _la respuesta completa de esa página como una sola cadena_. Si el usuario luego agrega un filtro o cambia el tamaño de la página, el caché de la página se rompe. Con Edge SQL, las traducciones se almacenan en caché a **Nivel de Entidad** (ej., `slug: acid-arrow_es-es`). Se puede ejecutar un comando rápido `SELECT * WHERE slug IN (...)`, lo que permite consultas de API dinámicas y robustas que se adaptan a cualquier variación de la lista.
+- **Contras**: El almacenamiento SQL requiere un poco más de configuración inicial en comparación con los simples comandos `get`/`put` en un KV store.
 
 ### 3. Traducciones Asíncronas vs Síncronas
 

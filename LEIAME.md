@@ -38,8 +38,8 @@ Durante a fase de planejamento desta API, foram tomadas decisões arquiteturais 
 
 **Trade-offs**:
 
-- **Prós**: **Flexibilidade na paginação.** Se um KV Store fosse utilizado, consultar uma página de magias (`/api/spells?page=2`) exigiria a criação de um cache da _resposta inteira daquela página_ como o valor da chave. Se a paginação mudasse ou o usuário inserisse um filtro (`?sort`), o cache da página quebraria. Com o Edge SQL, o cache é feito por **Entidade** (ex: `slug: acid-arrow_pt-br`). É possível montar consultas rápidas (`SELECT * WHERE slug IN (...)`), garantindo uma API robusta que se adapta dinamicamente às paginações da Open5e.
-- **Contras**: A configuração e o gerenciamento de esquemas (schemas) em SQL exigem mais código inicial do que simples requisições `get`/`put` nativas de um banco de dados NoSQL Chave-Valor.
+- **Prós**: **Flexibilidade na paginação.** Se um KV Store fosse utilizado, consultar uma lista paginada de magias (`/api/spells?page=2`) exigiria o cache da _resposta inteira da página como uma única string_. Se o usuário posteriormente adicionar um filtro ou alterar o tamanho da página, o cache da página é quebrado. Com o Edge SQL, as traduções são cacheadas em **Nível de Entidade** (ex: `slug: acid-arrow_pt-br`). Um comando rápido `SELECT * WHERE slug IN (...)` pode ser executado, permitindo consultas de API dinâmicas e robustas que se adaptam a quaisquer variações nas listas.
+- **Contras**: O armazenamento em SQL requer um pouco mais de configuração inicial em comparação com os comandos simples de `get`/`put` em um KV store.
 
 ### 3. Traduções Assíncronas vs Síncronas
 
