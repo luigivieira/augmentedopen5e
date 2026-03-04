@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/index.ts",
     "test": "vitest",
+    "test:local": "pnpm dlx tsx src/index.ts",
     "lint": "eslint \"src/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\"",
     "deploy": "azion deploy"
@@ -32,5 +33,8 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
     "vitest": "^2.0.0"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
   }
 }
