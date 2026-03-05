@@ -74,3 +74,5 @@ certificates
 .vulcan
 .open-next
 azion_deploy_debug.log
+# Azion state files
+azion/staging/azion.json

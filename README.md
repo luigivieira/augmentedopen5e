@@ -136,25 +136,39 @@ To deploy a test version directly from your local machine to the Azion Edge:
 pnpm deploy:staging
 ```
 
+- This command creates `azion/staging/azion.json` locally. The file is **ignored** by Git (see `.gitignore`) and can be safely deleted at any time if you want to recreate the staging resources.
+- Running the command again will recreate the staging application (`augmentedopen5e-staging`) and its associated function.
+
 This ensures your test application and its associated edge functions are created under the `augmentedopen5e-staging` namespace.
 
 #### 2. Production Deployment (GitHub Actions)
 
-Production deployments are automated via GitHub Actions upon pushing to the `main` branch.
+Production deployments are automated via GitHub Actions when you push to the `main` branch.
 
-> **Important for Forks:** If you fork this project, the official deployment token is not transferred for security reasons. To enable the CI/CD pipeline on your fork:
+> **Important for Forks:**
 >
-> 1. Create a Personal Token in your Azion Console.
-> 2. Go to your GitHub repository **Settings** -> **Secrets and variables** -> **Actions**.
-> 3. Add a new repository secret named `AZION_PERSONAL_TOKEN` and paste your token.
+> 1. Delete `azion/production/azion.json` (it contains IDs from the original repository's Azion account).
+> 2. Run `azion init --config-dir azion/production` to bootstrap a fresh file for your own account.
+> 3. Create a Personal Token in your Azion console.
+> 4. In your GitHub repository go to **Settings → Secrets and variables → Actions** and add a secret named `AZION_PERSONAL_TOKEN` with the token value.
 
-The automated pipeline executes the equivalent of:
+The CI pipeline runs:
 
 ```bash
 pnpm deploy:prod
 ```
 
-This command deploys the finalized application live under the `augmentedopen5e-prod` namespace without interfering with your staging resources.
+The first time this runs (after you have removed any existing `azion/production/azion.json`), the CLI will create the production resources (`augmentedopen5e-prod-app`, `augmentedopen5e-prod-function`, etc.) and generate a new `azion/production/azion.json` containing the real IDs.
+
+**After a successful deployment**, commit the generated `azion/production/azion.json` to the repository:
+
+```bash
+git add azion/production/azion.json
+git commit -m "chore: add production Azion state"
+git push
+```
+
+From then on, the CI will read this file and perform **updates** rather than creating new resources, keeping the production environment stable.
 
 ## License
 

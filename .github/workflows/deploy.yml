@@ -54,5 +54,5 @@ jobs:
       - name: Build Edge Function
         run: azion build --config-dir azion/production
 
-      - name: Build and Deploy to Production
+      - name: Deploy to Production
         run: pnpm run deploy:prod

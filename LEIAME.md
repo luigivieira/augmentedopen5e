@@ -136,25 +136,37 @@ Para realizar um deploy da sua versão de teste diretamente da sua máquina loca
 pnpm deploy:staging
 ```
 
-Isto garante que a sua aplicação de teste e suas edge functions associadas sejam criadas sob o namespace isolado `augmentedopen5e-staging`.
+- Este comando cria o arquivo `azion/staging/azion.json` localmente. Esse arquivo está **ignorado pelo Git** (ver `.gitignore`) e pode ser apagado a qualquer momento caso queira recriar os recursos de staging.
+- Rodando o comando novamente, a aplicação `augmentedopen5e-staging` e sua function serão recriadas.
 
 #### 2. Deploy de Produção (GitHub Actions)
 
-O deploy para produção é totalmente automatizado através de _GitHub Actions_ assim que você envia novidades (push) para a branch `main`.
+Os deploys de produção são automatizados via GitHub Actions ao fazer push para a branch `main`.
 
-> **Importante para Forks:** Se você clonar (fork) este projeto para o seu próprio GitHub, o token de publicação oficial do repositório original não será transferido, por motivos de segurança. Para habilitar o fluxo de CI/CD contínuo no seu fork:
+> **Importante para Forks:**
 >
-> 1. Crie um "Personal Token" no seu console da Azion.
-> 2. No seu repositório no GitHub, acesse **Settings** -> **Secrets and variables** -> **Actions**.
-> 3. Adicione um novo _repository secret_ chamado `AZION_PERSONAL_TOKEN` e cole o seu token lá.
+> 1. Apague o `azion/production/azion.json` (ele contém IDs da conta Azion do repositório original).
+> 2. Execute `azion init --config-dir azion/production` para criar um arquivo bootstrap para a sua própria conta.
+> 3. Crie um Personal Token no seu console da Azion.
+> 4. No seu repositório GitHub, acesse **Settings → Secrets and variables → Actions** e adicione um secret chamado `AZION_PERSONAL_TOKEN` com o valor do token.
 
-O fluxo automatizado executa o equivalente a:
+O pipeline de CI executa:
 
 ```bash
 pnpm deploy:prod
 ```
 
-Este comando publica a aplicação finalizada "ao vivo" sob o namespace `augmentedopen5e-prod`, mantendo seus recursos de rascunho (staging) intactos e intocáveis.
+Na primeira execução (após remover o `azion/production/azion.json` existente), o CLI criará os recursos de produção (`augmentedopen5e-prod-app`, `augmentedopen5e-prod-function`, etc.) e gerará um novo `azion/production/azion.json` com os IDs reais.
+
+**Após um deploy bem-sucedido**, faça o commit do `azion/production/azion.json` gerado:
+
+```bash
+git add azion/production/azion.json
+git commit -m "chore: add production Azion state"
+git push
+```
+
+A partir daí, o CI lerá esse arquivo e fará apenas **atualizações** nos recursos existentes, mantendo o ambiente de produção estável.
 
 ## Licença
 

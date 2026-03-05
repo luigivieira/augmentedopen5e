@@ -3,13 +3,23 @@
   "bucket": "",
   "preset": "typescript",
   "env": "production",
-  "prefix": "",
-  "rotate-prefix": true,
+  "prefix": "20260305025025",
+  "rotate-prefix": false,
   "not-first-run": true,
-  "function": [],
+  "function": [
+    {
+      "id": 51477,
+      "name": "augmentedopen5e-prod-function",
+      "file": "",
+      "args": "./azion/args.json",
+      "instance-id": 46221,
+      "instance-name": "",
+      "cache-id": 0
+    }
+  ],
   "application": {
-    "id": 0,
-    "name": ""
+    "id": 1772682353,
+    "name": "augmentedopen5e-prod-app"
   },
   "domain": {
     "id": 0,
@@ -23,9 +33,26 @@
   "origin": null,
   "rules-engine": {
     "created": false,
-    "rules": []
+    "rules": [
+      {
+        "id": 521389,
+        "name": "Execute Function",
+        "phase": "request"
+      }
+    ]
   },
   "cache-settings": null,
-  "workloads": null,
+  "workloads": {
+    "id": 1772686587,
+    "name": "augmentedopen5e-prod-workload",
+    "domains": [],
+    "url": "https://oqc4x8sriec.map.azionedge.net",
+    "deployment_id": [
+      {
+        "id": 184553,
+        "name": "augmentedopen5e-prod-deployment"
+      }
+    ]
+  },
   "connectors": null
 }

@@ -136,25 +136,37 @@ Para desplegar una versión de prueba directamente desde su máquina local hacia
 pnpm deploy:staging
 ```
 
-Esto garantiza que su aplicación de prueba y las "edge functions" asociadas sean creadas de forma controlada bajo el espacio de nombres (namespace) `augmentedopen5e-staging`.
+- Este comando crea el archivo `azion/staging/azion.json` localmente. Ese archivo está **ignorado por Git** (ver `.gitignore`) y puede borrarse en cualquier momento si desea recrear los recursos de staging.
+- Al volver a ejecutar el comando, la aplicación `augmentedopen5e-staging` y su function serán recreadas.
 
 #### 2. Despliegue de Producción (GitHub Actions)
 
-Los despliegues de producción están completamente automatizados a través de GitHub Actions cada vez que usted actualiza (push) la rama `main`.
+Los despliegues de producción están completamente automatizados a través de GitHub Actions cada vez que se hace push a la rama `main`.
 
-> **Importante para Forks:** Si usted bifurca (make a fork) este proyecto, el "token" oficial de despliegue original no es transferido por razones de seguridad. Para habilitar el canal de CI/CD integrado en su bifurcación:
+> **Importante para Forks:**
 >
-> 1. Cree un "Personal Token" directamente en su Panel de Azion.
-> 2. Vaya al repositorio de su GitHub siguiendo: **Settings** -> **Secrets and variables** -> **Actions**.
-> 3. Agregue un nuevo repositorio de secreto ("repository secret") nombrado como `AZION_PERSONAL_TOKEN` y pegue su token recientemente generado adentro.
+> 1. Elimine `azion/production/azion.json` (contiene IDs de la cuenta Azion del repositorio original).
+> 2. Ejecute `azion init --config-dir azion/production` para crear un archivo bootstrap para su propia cuenta.
+> 3. Cree un Personal Token en su consola de Azion.
+> 4. En su repositorio de GitHub, vaya a **Settings → Secrets and variables → Actions** y agregue un secret llamado `AZION_PERSONAL_TOKEN` con el valor del token.
 
-El modelo de automatización ejecuta el comando equivalente a:
+El pipeline de CI ejecuta:
 
 ```bash
 pnpm deploy:prod
 ```
 
-Este comando finalmente despliega online su aplicación oficial bajo el contenedor aislado de recursos `augmentedopen5e-prod`, de forma directa y sin interferir con sus recursos locales de "staging".
+La primera vez (después de eliminar el `azion/production/azion.json` existente), el CLI creará los recursos de producción (`augmentedopen5e-prod-app`, `augmentedopen5e-prod-function`, etc.) y generará un nuevo `azion/production/azion.json` con los IDs reales.
+
+**Después de un despliegue exitoso**, haga commit del `azion/production/azion.json` generado:
+
+```bash
+git add azion/production/azion.json
+git commit -m "chore: add production Azion state"
+git push
+```
+
+A partir de ese momento, el CI leerá ese archivo y realizará solo **actualizaciones** en los recursos existentes, manteniendo estable el entorno de producción.
 
 ## Licencia
 
