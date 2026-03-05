@@ -5,7 +5,14 @@
 import type { EdgeFetchEvent } from '../../index';
 import { translateSpellFields } from '../services/aiTranslation';
 import { Open5eApiError } from '../services/open5e';
-import { getBaseSpell, getCachedSpell, saveCachedSpell } from '../services/spellRepository';
+import {
+  clearPendingTranslation,
+  getBaseSpell,
+  getCachedSpell,
+  isPendingTranslation,
+  markTranslationPending,
+  saveCachedSpell,
+} from '../services/spellRepository';
 
 export async function handleSpellRequest(
   request: Request,
@@ -72,13 +79,33 @@ export async function handleSpellRequest(
       });
     }
 
-    // 3. Target is NOT en-us: Setup fallback and trigger background translation
+    // 3. Target is NOT en-us: Check if translation is already running
+    const alreadyPending = await isPendingTranslation(slug, targetLocale);
+
+    if (alreadyPending) {
+      return new Response(
+        JSON.stringify({
+          message:
+            `The translation of the contents for ${slug} (${targetLocale}) has not completed yet, ` +
+            'we apologise. Please try again in a few moments.',
+        }),
+        {
+          status: 202,
+          headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+        },
+      );
+    }
+
+    // 4. No background job yet — start one
     const runTranslationAndCache = async () => {
       try {
+        await markTranslationPending(slug, targetLocale);
         const translatedData = await translateSpellFields(data, targetLocale);
         await saveCachedSpell(slug, translatedData);
       } catch (err) {
         console.error(`Background translation failed for ${slug} to ${targetLocale}:`, err);
+      } finally {
+        await clearPendingTranslation(slug, targetLocale);
       }
     };
 
@@ -90,13 +117,18 @@ export async function handleSpellRequest(
       );
     }
 
-    // Return 202 Accepted to indicate processing has started, but content is not available yet.
-    return new Response(null, {
-      status: 202,
-      headers: {
-        'Cache-Control': 'no-store', // Do not cache the 202 Response
+    // Return 202 Accepted: translation just kicked off
+    return new Response(
+      JSON.stringify({
+        message:
+          `The contents for ${slug} (${targetLocale}) was missing, and it is being translated ` +
+          'in the background now. Please try again in a few moments.',
+      }),
+      {
+        status: 202,
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
       },
-    });
+    );
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'An unknown error occurred';
     const status = error instanceof Open5eApiError ? error.status : 500;

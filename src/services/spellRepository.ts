@@ -88,6 +88,45 @@ export async function addSlugToCatalog(locale: string, slug: string): Promise<vo
   }
 }
 
+// ---------------------------------------------------------------------------
+// Translation pending markers
+// ---------------------------------------------------------------------------
+
+function getPendingKey(slug: string, locale: string): string {
+  return `pending_${slug}_${locale.toLowerCase()}`;
+}
+
+/**
+ * Returns true if a background translation is already in flight for this slug+locale.
+ */
+export async function isPendingTranslation(slug: string, locale: string): Promise<boolean> {
+  const bucket = getSpellBucketName();
+  const marker = await getCacheItem<{ pending: true }>(bucket, getPendingKey(slug, locale));
+  return marker !== null;
+}
+
+/**
+ * Marks a translation as in-progress so duplicate requests don't spawn extra jobs.
+ */
+export async function markTranslationPending(slug: string, locale: string): Promise<void> {
+  const bucket = getSpellBucketName();
+  await setCacheItem(bucket, getPendingKey(slug, locale), { pending: true });
+}
+
+/**
+ * Clears the pending marker after a translation succeeds or fails.
+ */
+export async function clearPendingTranslation(slug: string, locale: string): Promise<void> {
+  // KV doesn't expose delete in the global API, so we overwrite with null-ish value
+  // and just rely on the isPendingTranslation check (which looks for non-null).
+  // A null body from getCacheItem counts as "not pending", so clearing means
+  // saving a tombstone that getCacheItem will treat as opaque (won't match the
+  // `{ pending: true }` shape but will be non-null) — safest: just don't exist.
+  // Since Azion Storage doesn't expose delete, we store an explicit { pending: false }.
+  const bucket = getSpellBucketName();
+  await setCacheItem(bucket, getPendingKey(slug, locale), { pending: false });
+}
+
 /**
  * Fetches the base spell (en-us).
  * Prioritizes the KV Cache for the en-us locale.

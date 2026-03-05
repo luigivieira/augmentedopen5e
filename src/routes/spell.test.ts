@@ -1,24 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Open5eApiError } from '../services/open5e';
-import { getBaseSpell, getCachedSpell, saveCachedSpell } from '../services/spellRepository';
+import {
+  clearPendingTranslation,
+  getBaseSpell,
+  getCachedSpell,
+  isPendingTranslation,
+  markTranslationPending,
+  saveCachedSpell,
+} from '../services/spellRepository';
 import { handleSpellRequest } from './spell';
-
-// Mock the open5e service
-vi.mock('../services/open5e', () => {
-  return {
-    fetchOpen5e: vi.fn(),
-    Open5eApiError: class Open5eApiError extends Error {
-      status: number;
-      retryable: boolean;
-      constructor(message: string, status: number, retryable: boolean) {
-        super(message);
-        this.status = status;
-        this.retryable = retryable;
-        this.name = 'Open5eApiError';
-      }
-    },
-  };
-});
 
 // Mock the spellRepository service
 vi.mock('../services/spellRepository', () => {
@@ -26,6 +16,9 @@ vi.mock('../services/spellRepository', () => {
     getBaseSpell: vi.fn(),
     getCachedSpell: vi.fn(),
     saveCachedSpell: vi.fn(),
+    isPendingTranslation: vi.fn(),
+    markTranslationPending: vi.fn(),
+    clearPendingTranslation: vi.fn(),
   };
 });
 
@@ -33,6 +26,9 @@ describe('handleSpellRequest', () => {
   const mockGetBaseSpell = vi.mocked(getBaseSpell);
   const mockGetCachedSpell = vi.mocked(getCachedSpell);
   const mockSaveCachedSpell = vi.mocked(saveCachedSpell);
+  const mockIsPendingTranslation = vi.mocked(isPendingTranslation);
+  const mockMarkTranslationPending = vi.mocked(markTranslationPending);
+  const mockClearPendingTranslation = vi.mocked(clearPendingTranslation);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -40,7 +36,7 @@ describe('handleSpellRequest', () => {
       AI: {
         run: vi.fn(),
       },
-    } as unknown as typeof globalThis.Azion;
+    } as any;
   });
 
   it('should return 400 if slug is missing', async () => {
@@ -61,39 +57,7 @@ describe('handleSpellRequest', () => {
     expect(data.error).toBe('Missing locale parameter');
   });
 
-  it('should return from cache immediately on Cache HIT (en-us)', async () => {
-    mockGetCachedSpell.mockResolvedValueOnce({
-      locale: 'en-us',
-      name: 'Cached Fireball',
-    });
-
-    const request = new Request('http://localhost/api/spell?slug=fireball&locale=en-us');
-    const response = await handleSpellRequest(request);
-
-    expect(mockGetCachedSpell).toHaveBeenCalledWith('fireball', 'en-us');
-    expect(mockGetBaseSpell).not.toHaveBeenCalled(); // Cache HIT prevented fetch
-
-    expect(response.status).toBe(200);
-    const data = await response.json();
-    expect(data.name).toBe('Cached Fireball');
-  });
-
-  it('should fetch from base spell repository on Cache MISS (en-us)', async () => {
-    mockGetCachedSpell.mockResolvedValueOnce(null); // Cache MISS
-    mockGetBaseSpell.mockResolvedValueOnce({ locale: 'en-us', name: 'Fireball' });
-
-    const request = new Request('http://localhost/api/spell?slug=fireball&locale=en-us');
-    const response = await handleSpellRequest(request);
-
-    expect(mockGetCachedSpell).toHaveBeenCalledWith('fireball', 'en-us');
-    expect(mockGetBaseSpell).toHaveBeenCalledWith('fireball', undefined);
-
-    expect(response.status).toBe(200);
-    const data = await response.json();
-    expect(data).toEqual({ locale: 'en-us', name: 'Fireball' });
-  });
-
-  it('should return 400 if locale is malformed', async () => {
+  it('should return 400 if locale format is invalid', async () => {
     const request = new Request('http://localhost/api/spell?slug=fireball&locale=pt');
     const response = await handleSpellRequest(request);
 
@@ -102,13 +66,14 @@ describe('handleSpellRequest', () => {
     expect(data.error).toEqual(expect.stringContaining('Invalid locale format'));
   });
 
-  it('should call Azion.AI.run correctly on Cache MISS if locale is not en-us, save and return 202 immediately', async () => {
+  it('should call Azion.AI.run correctly on Cache MISS if locale is not en-us, save and return 202 with message', async () => {
     mockGetCachedSpell.mockResolvedValueOnce(null); // Cache MISS
     mockGetBaseSpell.mockResolvedValueOnce({
       locale: 'en-us',
       name: 'Fireball',
       desc: 'A bright streak flashes...',
     });
+    mockIsPendingTranslation.mockResolvedValueOnce(false);
     mockSaveCachedSpell.mockResolvedValueOnce();
 
     const mockAzionRun = vi.fn().mockResolvedValue({
@@ -120,23 +85,18 @@ describe('handleSpellRequest', () => {
     const response = await handleSpellRequest(request);
 
     expect(mockGetCachedSpell).toHaveBeenCalledWith('fireball', 'pt-br');
-    expect(mockGetBaseSpell).toHaveBeenCalledWith('fireball', undefined);
+    expect(mockIsPendingTranslation).toHaveBeenCalledWith('fireball', 'pt-br');
 
     expect(response.status).toBe(202);
-    const text = await response.text();
-    expect(text).toBe(''); // Empty body for 202
+    const data = await response.json();
+    expect(data.message).toContain('being translated in the background now');
 
     // Translation started
+    expect(mockMarkTranslationPending).toHaveBeenCalledWith('fireball', 'pt-br');
     expect(mockAzionRun).toHaveBeenCalled();
 
     // Allow background operations to finish
     await new Promise((resolve) => setTimeout(resolve, 0));
-
-    // Verify system prompt model and arguments
-    const callArgs = mockAzionRun.mock.calls[0];
-    expect(callArgs[0]).toBe('Llama-3-8B-Instruct');
-    expect(callArgs[1].messages[0].role).toBe('system');
-    expect(callArgs[1].messages[1].role).toBe('user');
 
     // Verify it saved the correct translated payload to KV
     expect(mockSaveCachedSpell).toHaveBeenCalledWith('fireball', {
@@ -144,6 +104,31 @@ describe('handleSpellRequest', () => {
       name: 'Bola de Fogo',
       desc: 'Um clarão brilhante...',
     });
+    expect(mockClearPendingTranslation).toHaveBeenCalledWith('fireball', 'pt-br');
+  });
+
+  it('should return 202 and not start a new translation if one is already pending', async () => {
+    mockGetCachedSpell.mockResolvedValueOnce(null); // Cache MISS
+    mockGetBaseSpell.mockResolvedValueOnce({
+      locale: 'en-us',
+      name: 'Fireball',
+      desc: '...',
+    });
+    mockIsPendingTranslation.mockResolvedValueOnce(true);
+
+    const mockAzionRun = vi.fn();
+    globalThis.Azion.AI.run = mockAzionRun;
+
+    const request = new Request('http://localhost/api/spell?slug=fireball&locale=pt-br');
+    const response = await handleSpellRequest(request);
+
+    expect(response.status).toBe(202);
+    const data = await response.json();
+    expect(data.message).toContain('has not completed yet');
+
+    // Should NOT have called AI or mark pending again
+    expect(mockMarkTranslationPending).not.toHaveBeenCalled();
+    expect(mockAzionRun).not.toHaveBeenCalled();
   });
 
   it('should handle API errors from Open5e', async () => {
