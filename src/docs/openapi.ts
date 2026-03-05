@@ -12,52 +12,56 @@ export const openApiSpec = {
     },
   ],
   paths: {
-    '/api/spells': {
+    '/api/spell': {
       get: {
-        summary: 'Get spells',
-        description: 'Retrieve a list of D&D 5e spells with optional filters.',
+        summary: 'Get a single spell',
+        description: 'Retrieve a single D&D 5e spell by slug and locale.',
         parameters: [
-          {
-            name: 'name',
-            in: 'query',
-            description: 'Exact spell name to match',
-            schema: { type: 'string' },
-          },
-          {
-            name: 'school',
-            in: 'query',
-            description: 'Exact school of magic to match',
-            schema: { type: 'string' },
-          },
           {
             name: 'slug',
             in: 'query',
-            description: 'Exact spell slug to match',
+            description: 'Exact spell slug to match (e.g. "fireball")',
+            required: true,
             schema: { type: 'string' },
           },
           {
-            name: 'level',
+            name: 'locale',
             in: 'query',
-            description: 'Exact spell level to match',
+            description: 'Target locale for translation (e.g. "en-us", "pt-br", "es")',
+            required: true,
             schema: { type: 'string' },
           },
+        ],
+        responses: {
+          '200': {
+            description: 'Successful response with the spell data (currently only for en-us)',
+            content: {
+              'application/json': {
+                schema: { type: 'object' },
+              },
+            },
+          },
+          '202': {
+            description:
+              'Accepted for translation. Dispatches background job and returns empty body.',
+          },
+          '400': {
+            description: 'Missing required parameters',
+          },
+        },
+      },
+    },
+    '/api/spells': {
+      get: {
+        summary: 'Get spells status and discovery',
+        description: 'Returns the sync status and available slugs for specific locales.',
+        parameters: [
           {
-            name: 'search',
+            name: 'locale',
             in: 'query',
-            description: 'General fuzzy text search (matches name, description, etc.)',
+            description: 'Optional target locale to check status for',
+            required: false,
             schema: { type: 'string' },
-          },
-          {
-            name: 'limit',
-            in: 'query',
-            description: 'Number of results per page',
-            schema: { type: 'integer', default: 50 },
-          },
-          {
-            name: 'page',
-            in: 'query',
-            description: 'Page number for pagination',
-            schema: { type: 'integer', default: 1 },
           },
         ],
         responses: {
@@ -66,14 +70,18 @@ export const openApiSpec = {
             content: {
               'application/json': {
                 schema: {
-                  type: 'object',
-                  properties: {
-                    count: { type: 'integer' },
-                    next: { type: 'string', nullable: true },
-                    previous: { type: 'string', nullable: true },
-                    results: {
-                      type: 'array',
-                      items: { type: 'object' },
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      locale: { type: 'string', example: 'en-us' },
+                      total: { type: 'integer', example: 319 },
+                      cached: { type: 'integer', example: 319 },
+                      spells: {
+                        type: 'array',
+                        items: { type: 'string' },
+                        example: ['fireball', 'acid-arrow'],
+                      },
                     },
                   },
                 },

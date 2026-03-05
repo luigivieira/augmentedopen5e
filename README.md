@@ -12,43 +12,31 @@ It serves Dungeons & Dragons 5th Edition System Reference Document (SRD) content
 
 > **⚠️ CAUTION — Copyright Notice:** This project relies entirely on the open-source D&D 5e SRD (System Reference Document), which is licensed under Creative Commons (CC-BY). **The translations provided by this API are strictly machine-generated (via AI/LLMs) on-the-fly and are NOT official translations.** This project is not affiliated with, endorsed by, or meant to reproduce the copyrighted translated works of Wizards of the Coast or any of its localized publishing partners.
 
-## Features
+## Core Value & Use Case
 
-- **Edge Native**: Runs globally on V8 isolates via [Azion Edge Functions](https://www.azion.com/en/products/edge-functions/) for ultra-low latency.
-- **Auto-Translation**: Automatically translates spells into requested locales using Hugging Face Inference endpoints (support for monsters and items is planned for future versions).
-- **Asynchronous Translation Engine**: Prevents edge timeouts by returning partial data immediately while triggering background translations.
-- **Edge SQL Caching**: Caches translated entities (and eventually raw Open5e English strings) directly at the edge in a globally replicated SQLite database via [Azion Edge SQL](https://www.azion.com/en/products/edge-sql/).
+The primary goal of this API is **not** to replace the Open5e API, but to complement it. A client can perfectly use Open5e directly for search and pagination (which is a distinct use case with its own UX), and use this API strictly as a fast translation layer by slug.
 
-## Architecture & Trade-offs
+Translations are blazing fast because they run at the edge and are cached globally — low latency is guaranteed after the first access.
 
-During the design phase of this API, several deliberate architectural choices were made, tailored for serverless edge computing.
+**Concrete Example:** A digital spellbook or character sheet UI that displays automatically translated spells for the user. The client searches the spell on Open5e, extracts the slug, and calls this API to fetch the translation—all without the developer needing to manage their own translation infrastructure.
 
-### 1. Monolith Router vs Micro-Functions
+## Current Limitations
 
-**Decision**: A single API entry point (`index.ts`) that routes traffic internally, rather than deploying dozens of separate Azion edge functions for each route (`/monsters`, `/spells`, etc.).
+The API currently supports **only individual spell lookups by slug**. There are no endpoints for search, pagination, or bulk translation operations.
 
-**Trade-offs**:
+**Why?** The edge computing model (based on V8 isolates and strict execution time limits) is fundamentally unsuitable for long-running bulk processing or orchestration. Such heavy operations belong in a traditional cloud worker consuming a message queue, not at the edge.
 
-- **Pros**: Drastically reduces cold starts since any request to the API keeps the V8 isolate warm for all other routes. It also centralizes middleware (auth, JSON parsing, error handling) and reduces deployment complexity via Azion CLI.
-- **Cons**: The final bundled script size is slightly larger than a single-purpose micro-function, though negligible for a Node/V8 environment.
+## Architecture Roadmap
 
-### 2. Azion Edge SQL vs Azion KV Store
+The project's planned architecture separates the fast distribution of data from the slow generation of AI translations:
 
-**Decision**: Azion Edge SQL (Distributed SQLite) is chosen over the Azion KV Store for the primary caching and translation storage layer.
+1. **The Edge Function** serves cached results and returns `202 Accepted` for content that hasn't been translated yet.
+2. **A Cloud Worker** (e.g., Cloud Run, Lambda) consumes a message queue (e.g., SQS, Pub/Sub) and processes the translations in bulk asynchronously.
+3. **Edge SQL** remains purely as a highly available, fast read cache in the hot path.
 
-**Trade-offs**:
+This separation respects the edge computing's main strength (serving with low latency) without abusing it for workloads it wasn't designed for.
 
-- **Pros**: **Pagination flexibility.** If a KV Store were used, querying a paginated list of spells (`/api/spells?page=2`) would require caching _the entire page response as a single string_. If the user later adds a filter or changes the page size, the page-cache is broken. With Edge SQL, translations are cached at the **Entity Level** (e.g., `slug: acid-arrow_pt-br`). A fast `SELECT * WHERE slug IN (...)` command can be executed, allowing dynamic, robust API querying that adapts to any list variations.
-- **Cons**: SQL storage requires slightly more setup compared to simple `get/put` commands in a KV store.
-
-### 3. Asynchronous vs Synchronous Translations
-
-**Decision**: Hugging Face LLM translation calls happen _asynchronously_ (in the background) rather than blocking the user's HTTP request.
-
-**Trade-offs**:
-
-- **Pros**: Edge functions have strict execution time limits. Waiting for an external AI model to translate a large block of JSON synchronously would invariably lead to `504 Gateway Timeout` errors. By returning the untranslated (or partially translated) list immediately and dispatching the translation task to the background (`event.waitUntil` / background queues), the API remains blazingly fast.
-- **Cons**: The user must refresh or make a subsequent request a few seconds later to see the completed translations once they are cached in the Edge SQL database.
+Additionally, the `GET /api/spells?locale=<locale>` endpoint might, in the future, automatically trigger the background translation job when a locale is requested and no spells are cached — making it the natural entry point to begin warming the cache for a new language.
 
 ## Development
 

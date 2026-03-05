@@ -1,4 +1,5 @@
 import { handleDocsRequest } from './src/routes/docs';
+import { handleSpellRequest } from './src/routes/spell';
 import { handleSpellsRequest } from './src/routes/spells';
 
 /**
@@ -13,15 +14,22 @@ async function handleRequest(request: Request): Promise<Response> {
     return handleDocsRequest(request);
   }
 
-  if (url.pathname.startsWith('/api/spells')) {
+  if (url.pathname === '/api/spell') {
+    return handleSpellRequest(request);
+  }
+
+  if (url.pathname === '/api/spells') {
     return handleSpellsRequest(request);
   }
 
   // Not Found fallback
-  return new Response(JSON.stringify({ error: 'Endpoint not found. Try /api/spells' }), {
-    status: 404,
-    headers: { 'content-type': 'application/json' },
-  });
+  return new Response(
+    JSON.stringify({ error: 'Endpoint not found. Try /api/spell or /api/spells' }),
+    {
+      status: 404,
+      headers: { 'content-type': 'application/json' },
+    },
+  );
 }
 
 interface FetchEvent extends Event {

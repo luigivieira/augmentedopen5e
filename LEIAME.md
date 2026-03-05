@@ -12,43 +12,31 @@ Ela serve conteúdo do System Reference Document (SRD) de Dungeons & Dragons 5ª
 
 > **⚠️ AVISO — Sobre Direitos Autorais:** Este projeto baseia-se inteiramente no SRD (System Reference Document) de D&D 5e, que é disponibilizado sob licença Creative Commons (CC-BY). **As traduções fornecidas por esta API são estritamente geradas por máquina (via IA/LLMs) sob demanda e NÃO SÃO traduções oficiais.** Este projeto não é afiliado, endossado ou criado com o intuito de reproduzir as obras traduzidas protegidas por direitos autorais da Wizards of the Coast ou de qualquer um de seus parceiros locais de publicação.
 
-## Funcionalidades
+## Valor Real e Caso de Uso
 
-- **Edge Native**: Roda globalmente em V8 isolates via [Azion Edge Functions](https://www.azion.com/pt-br/produtos/edge-functions/) para latência ultrabaixa.
-- **Auto-Tradução**: Traduz automaticamente magias para o idioma solicitado ("locale") utilizando endpoints de Inferência do Hugging Face (suporte a monstros e itens está planejado para versões futuras).
-- **Motor de Tradução Assíncrono**: Previne timeouts no Edge retornando dados parciais imediatamente enquanto aciona traduções em background.
-- **Cache em Edge SQL**: Faz o cache das entidades traduzidas (e possivelmente até das strings originais em inglês da Open5e) diretamente na borda (edge) através de num banco de dados SQLite globalmente replicado utilizando o [Azion Edge SQL](https://www.azion.com/pt-br/produtos/edge-sql/).
+O principal caso de uso desta API **não é** substituir a API do Open5e, mas sim complementá-la. Um cliente (aplicação) pode perfeitamente usar o Open5e diretamente para processos de busca (search) e paginação (que é um caso de uso distinto, com sua própria UX), e utilizar esta API apenas como uma camada de tradução rápida através do `slug`.
 
-## Arquitetura & Trade-offs (Prós e Contras)
+As traduções serão incrivelmente rápidas justamente porque rodam no edge e são cacheadas globalmente — garantindo baixa latência após o primeiro acesso.
 
-Durante a fase de planejamento desta API, foram tomadas decisões arquiteturais deliberadas focadas na computação serverless na borda.
+**Exemplo Concreto:** Uma UI de grimório ou ficha de personagem que exibe magias traduzidas automaticamente para o idioma do usuário. O cliente busca a magia na Open5e, pega o slug, e chama esta API para obter a tradução — sem precisar gerenciar nenhuma infraestrutura de tradução própria.
 
-### 1. Roteador Monolítico vs Micro-Funções (Micro-Functions)
+## Limitações Atuais
 
-**Decisão**: Um ponto de entrada único (`index.ts`) que roteia o tráfego internamente, em vez de fazer deploy de dezenas de funções isoladas na Azion para cada rota (`/monsters`, `/spells`, etc.).
+Atualmente, a API suporta apenas a **busca individual de magias por slug**. Quaisquer endpoints relacionados a search (busca aberta), paginação ou operações em bulk (massa) não existem e não são suportados.
 
-**Trade-offs**:
+**Por quê?** O modelo de edge computing (executado em V8 isolates) possui limites rígidos de tempo de execução e não é adequado para processamento em massa de longa duração ou grandes orquestrações. Essas operações pertencem a um cloud worker tradicional consumindo uma fila de mensagens, não ao edge.
 
-- **Prós**: Reduz drasticamente os _cold starts_ (inicializações frias), pois qualquer requisição para a API mantém o Isolate do V8 aquecido para todas as outras rotas. Também centraliza os middlewares (como parsing de JSON e tratamento de erros) e reduz muito a complexidade de gerenciar dezenas de deploys pelo Azion CLI.
-- **Contras**: O tamanho final do bundle (`.ts` transpilado) fica levemente maior do que o de uma função isolada de propósito único, embora o impacto seja nulo para uma engine V8.
+## Arquitetura e Roadmap
 
-### 2. Azion Edge SQL vs Azion KV Store (Chave-Valor)
+A arquitetura planejada para a próxima iteração do projeto separa claramente a entrega rápida do processamento pesado:
 
-**Decisão**: Utilização do Azion Edge SQL (SQLite Distribuído) no lugar do Azion KV Store (Armazenamento de Chave-Valor) para a camada de cache.
+1. **A Edge Function** serve os resultados cacheados e retorna o status `202 Accepted` para conteúdos que ainda não foram traduzidos.
+2. **Um Cloud Worker** (ex: Cloud Run, Lambda) consome uma fila de mensagens (ex: SQS, Pub/Sub) e processa as traduções em bulk de forma assíncrona.
+3. **O Edge SQL** permanece como um cache de leitura rápida no "hot path" (caminho crítico de latência).
 
-**Trade-offs**:
+Essa separação respeita o ponto forte do edge (servir conteúdo com latência ultrabaixa) sem abusar da plataforma para workloads para os quais ela não foi projetada.
 
-- **Prós**: **Flexibilidade na paginação.** Se um KV Store fosse utilizado, consultar uma lista paginada de magias (`/api/spells?page=2`) exigiria o cache da _resposta inteira da página como uma única string_. Se o usuário posteriormente adicionar um filtro ou alterar o tamanho da página, o cache da página é quebrado. Com o Edge SQL, as traduções são cacheadas em **Nível de Entidade** (ex: `slug: acid-arrow_pt-br`). Um comando rápido `SELECT * WHERE slug IN (...)` pode ser executado, permitindo consultas de API dinâmicas e robustas que se adaptam a quaisquer variações nas listas.
-- **Contras**: O armazenamento em SQL requer um pouco mais de configuração inicial em comparação com os comandos simples de `get`/`put` em um KV store.
-
-### 3. Traduções Assíncronas vs Síncronas
-
-**Decisão**: As chamadas para a API de tradução de LLM do Hugging Face acontecem de forma _assíncrona_ (em background) em vez de bloquearem a requisição HTTP.
-
-**Trade-offs**:
-
-- **Prós**: Edge Functions possuem limites de tempo de execução (timeouts) muito rigorosos. Esperar um modelo de IA externo traduzir grandes blocos de JSON de forma síncrona invariavelmente levaria a erros `504 Gateway Timeout`. Ao retornar a lista não traduzida (ou parcialmente traduzida) imediatamente e despachar a tradução para segundo plano, a API principal se mantém extremamente veloz.
-- **Contras**: O cliente (usuário/aplicação) precisará dar "refresh" ou fazer uma nova requisição alguns segundos depois para ver as traduções completas, assim que o background terminar de inseri-las no Edge SQL.
+Além disso, o endpoint de descoberta `GET /api/spells?locale=<locale>` poderá, no futuro (como uma possibilidade ou contribuição da comunidade), disparar automaticamente o job de tradução em background quando um locale for consultado sem nenhuma magia em cache — tornando-o o ponto de entrada natural para iniciar o "aquecimento do cache" (cache warming) de um novo idioma.
 
 ## Desenvolvimento
 
