@@ -1,19 +1,19 @@
-import { defineConfig } from 'azion'
+import { defineConfig } from 'azion';
 
-const isStaging = process.env.AZION_ENV === 'staging'
-const envName = isStaging ? 'augmentedopen5e-staging' : 'augmentedopen5e-prod'
+const isStaging = process.env.AZION_ENV === 'staging';
+const envName = isStaging ? 'augmentedopen5e-staging' : 'augmentedopen5e-prod';
 
 export default defineConfig({
   build: {
     entry: ['index.ts'],
     preset: 'typescript',
-    polyfills: true
+    polyfills: true,
   },
   functions: [
     {
       name: `${envName}-function`,
-      path: './functions/index.js'
-    }
+      path: './functions/index.js',
+    },
   ],
   applications: [
     {
@@ -30,28 +30,28 @@ export default defineConfig({
                   variable: '${uri}',
                   conditional: 'if',
                   operator: 'matches',
-                  argument: '^/'
-                }
-              ]
+                  argument: '^/',
+                },
+              ],
             ],
             behaviors: [
               {
                 type: 'run_function',
                 attributes: {
-                  value: `${envName}-function`
-                }
-              }
-            ]
-          }
-        ]
+                  value: `${envName}-function`,
+                },
+              },
+            ],
+          },
+        ],
       },
       functionsInstances: [
         {
           name: `${envName}-function`,
-          ref: `${envName}-function`
-        }
-      ]
-    }
+          ref: `${envName}-function`,
+        },
+      ],
+    },
   ],
   workloads: [
     {
@@ -66,11 +66,11 @@ export default defineConfig({
           strategy: {
             type: 'default',
             attributes: {
-              application: `${envName}-app`
-            }
-          }
-        }
-      ]
-    }
-  ]
-})
+              application: `${envName}-app`,
+            },
+          },
+        },
+      ],
+    },
+  ],
+});

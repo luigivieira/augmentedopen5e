@@ -5,6 +5,8 @@
   "description": "An Azion Edge Functions API to augment Open5e 5th Edition SRD content with automatic LLM translations.",
   "main": "index.ts",
   "scripts": {
+    "format": "prettier --write .",
+    "lint": "eslint . --fix",
     "test": "vitest",
     "emulate": "azion dev",
     "open": "pnpm dlx open-cli http://localhost:3333/docs",
