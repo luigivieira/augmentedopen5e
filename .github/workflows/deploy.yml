@@ -48,8 +48,7 @@ jobs:
       - name: Install Azion CLI
         run: curl -fsSL https://cli.azion.app/install.sh | bash
 
-      - name: Authenticate Azion CLI
-        run: azion login --token ${{ secrets.AZION_PERSONAL_TOKEN }}
-
       - name: Build and Deploy to Production
+        env:
+          AZION_TOKEN: ${{ secrets.AZION_PERSONAL_TOKEN }}
         run: pnpm run deploy:prod
