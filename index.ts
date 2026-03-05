@@ -29,8 +29,6 @@ interface FetchEvent extends Event {
   respondWith(response: Response | Promise<Response>): void;
 }
 
-// In Edge environments based on Web Workers/WinterCG (such as Azion)
-// the entry point relies on capturing the 'fetch' event globally.
 if (typeof addEventListener !== 'undefined') {
   addEventListener('fetch', ((event: FetchEvent) => {
     event.respondWith(handleRequest(event.request));

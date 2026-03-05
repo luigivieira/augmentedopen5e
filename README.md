@@ -124,11 +124,37 @@ You can emulate the Azion Edge Functions environment locally to test changes thr
 
    This will automatically open your default browser at `http://localhost:3333/docs` where you can view the specification and test endpoints directly.
 
-Deploying to Azion (requires Azion CLI):
+### Deployment Strategy
+
+This project utilizes a dual-environment configuration (Staging and Production) mapped out in `azion.config.ts`. Resources created on Azion will automatically receive a suffix (`-staging` or `-prod`) appended to their names based on the deployed environment.
+
+#### 1. Local Staging Deployment
+
+To deploy a test version directly from your local machine to the Azion Edge:
 
 ```bash
-pnpm deploy
+pnpm deploy:staging
 ```
+
+This ensures your test application and its associated edge functions are created under the `augmentedopen5e-staging` namespace.
+
+#### 2. Production Deployment (GitHub Actions)
+
+Production deployments are automated via GitHub Actions upon pushing to the `main` branch.
+
+> **Important for Forks:** If you fork this project, the official deployment token is not transferred for security reasons. To enable the CI/CD pipeline on your fork:
+>
+> 1. Create a Personal Token in your Azion Console.
+> 2. Go to your GitHub repository **Settings** -> **Secrets and variables** -> **Actions**.
+> 3. Add a new repository secret named `AZION_PERSONAL_TOKEN` and paste your token.
+
+The automated pipeline executes the equivalent of:
+
+```bash
+pnpm deploy:prod
+```
+
+This command deploys the finalized application live under the `augmentedopen5e-prod` namespace without interfering with your staging resources.
 
 ## License
 

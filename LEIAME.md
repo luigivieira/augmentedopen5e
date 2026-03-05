@@ -124,11 +124,37 @@ Você pode emular o ambiente do Azion Edge Functions localmente para testar alte
 
    Isto abrirá automaticamente o seu navegador padrão em `http://localhost:3333/docs` de onde você poderá visualizar a especificação e testar os endpoints diretamente pela UI.
 
-Deploy para Azion (requer Azion CLI instalada):
+### Estratégia de Deploy
+
+Este projeto utiliza uma configuração de duplo-ambiente (Staging e Produção), mapeada no `azion.config.ts`. Os recursos criados na Azion receberão automaticamente um sufixo (`-staging` ou `-prod`) adicionado aos seus nomes, dependendo do ambiente deployado.
+
+#### 1. Deploy Local de Staging (Testes)
+
+Para realizar um deploy da sua versão de teste diretamente da sua máquina local para o Edge da Azion:
 
 ```bash
-pnpm deploy
+pnpm deploy:staging
 ```
+
+Isto garante que a sua aplicação de teste e suas edge functions associadas sejam criadas sob o namespace isolado `augmentedopen5e-staging`.
+
+#### 2. Deploy de Produção (GitHub Actions)
+
+O deploy para produção é totalmente automatizado através de _GitHub Actions_ assim que você envia novidades (push) para a branch `main`.
+
+> **Importante para Forks:** Se você clonar (fork) este projeto para o seu próprio GitHub, o token de publicação oficial do repositório original não será transferido, por motivos de segurança. Para habilitar o fluxo de CI/CD contínuo no seu fork:
+>
+> 1. Crie um "Personal Token" no seu console da Azion.
+> 2. No seu repositório no GitHub, acesse **Settings** -> **Secrets and variables** -> **Actions**.
+> 3. Adicione um novo _repository secret_ chamado `AZION_PERSONAL_TOKEN` e cole o seu token lá.
+
+O fluxo automatizado executa o equivalente a:
+
+```bash
+pnpm deploy:prod
+```
+
+Este comando publica a aplicação finalizada "ao vivo" sob o namespace `augmentedopen5e-prod`, mantendo seus recursos de rascunho (staging) intactos e intocáveis.
 
 ## Licença
 

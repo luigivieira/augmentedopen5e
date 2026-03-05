@@ -7,10 +7,9 @@ export const openApiSpec = {
   },
   servers: [
     {
-      url: 'http://localhost:3333',
-      description: 'Local Emulator',
+      url: '/',
+      description: 'Current Environment',
     },
-    // We can add the Azion Edge deployment URL here later
   ],
   paths: {
     '/api/spells': {

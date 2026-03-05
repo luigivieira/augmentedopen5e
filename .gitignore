@@ -69,3 +69,8 @@ certificates
 
 # Sentry Config File
 .env.sentry-build-plugin
+#Paths added by Azion CLI
+.edge/
+.vulcan
+.open-next
+azion_deploy_debug.log

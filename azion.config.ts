@@ -1,36 +1,23 @@
-/**
- * This file was automatically generated based on your preset configuration.
- *
- * For better type checking and IntelliSense:
- * 1. Install azion as dev dependency:
- *    npm install -D azion
- *
- * 2. Use defineConfig:
- *    import { defineConfig } from 'azion'
- *
- * 3. Replace the configuration with defineConfig:
- *    export default defineConfig({
- *      // Your configuration here
- *    })
- *
- * For more configuration options, visit:
- * https://github.com/aziontech/lib/tree/main/packages/config
- */
+import { defineConfig } from 'azion'
 
-export default {
+const isStaging = process.env.AZION_ENV === 'staging'
+const envName = isStaging ? 'augmentedopen5e-staging' : 'augmentedopen5e-prod'
+
+export default defineConfig({
   build: {
+    entry: ['index.ts'],
     preset: 'typescript',
     polyfills: true
   },
   functions: [
     {
-      name: '$FUNCTION_NAME',
+      name: `${envName}-function`,
       path: './functions/index.js'
     }
   ],
   applications: [
     {
-      name: '$APPLICATION_NAME',
+      name: `${envName}-app`,
       rules: {
         request: [
           {
@@ -51,7 +38,7 @@ export default {
               {
                 type: 'run_function',
                 attributes: {
-                  value: '$FUNCTION_NAME'
+                  value: `${envName}-function`
                 }
               }
             ]
@@ -60,30 +47,30 @@ export default {
       },
       functionsInstances: [
         {
-          name: '$FUNCTION_INSTANCE_NAME',
-          ref: '$FUNCTION_NAME'
+          name: `${envName}-function`,
+          ref: `${envName}-function`
         }
       ]
     }
   ],
   workloads: [
     {
-      name: '$WORKLOAD_NAME',
+      name: `${envName}-workload`,
       active: true,
       infrastructure: 1,
       deployments: [
         {
-          name: '$DEPLOYMENT_NAME',
+          name: `${envName}-deployment`,
           current: true,
           active: true,
           strategy: {
             type: 'default',
             attributes: {
-              application: '$APPLICATION_NAME'
+              application: `${envName}-app`
             }
           }
         }
       ]
     }
   ]
-}
+})

@@ -8,9 +8,8 @@
     "test": "vitest",
     "emulate": "azion dev",
     "open": "pnpm dlx open-cli http://localhost:3333/docs",
-    "lint": "eslint \"src/**/*.ts\"",
-    "format": "prettier --write \"src/**/*.ts\"",
-    "deploy": "azion deploy"
+    "deploy:staging": "if [ \"$CI\" = \"true\" ]; then echo 'Do not run staging on CI.' && exit 1; else AZION_ENV=staging azion deploy --local --config-dir azion/staging -y; fi",
+    "deploy:prod": "if [ \"$CI\" != \"true\" ]; then echo 'Only run production deploy in CI.' && exit 1; else AZION_ENV=production azion deploy --local --config-dir azion/production -y; fi"
   },
   "keywords": [
     "azion",
@@ -28,6 +27,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^25.3.3",
+    "azion": "^3.1.2",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.2.5",

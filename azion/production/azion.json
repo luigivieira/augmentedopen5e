@@ -1,0 +1,58 @@
+{
+  "name": "augmentedopen5e",
+  "bucket": "",
+  "preset": "typescript",
+  "env": "production",
+  "prefix": "20260304233458",
+  "rotate-prefix": true,
+  "not-first-run": true,
+  "function": [
+    {
+      "id": 51473,
+      "name": "augmentedopen5e",
+      "file": "",
+      "args": "./azion/args.json",
+      "instance-id": 46216,
+      "instance-name": "",
+      "cache-id": 0
+    }
+  ],
+  "application": {
+    "id": 1772672334,
+    "name": "augmentedopen5e"
+  },
+  "domain": {
+    "id": 0,
+    "name": "__DEFAULT__",
+    "domain_name": "",
+    "url": ""
+  },
+  "rt-purge": {
+    "purge_on_publish": true
+  },
+  "origin": null,
+  "rules-engine": {
+    "created": false,
+    "rules": [
+      {
+        "id": 521368,
+        "name": "Execute Function",
+        "phase": "request"
+      }
+    ]
+  },
+  "cache-settings": null,
+  "workloads": {
+    "id": 1772676564,
+    "name": "augmentedopen5e",
+    "domains": [],
+    "url": "https://xg6mglokp6i.map.azionedge.net",
+    "deployment_id": [
+      {
+        "id": 184530,
+        "name": "augmentedopen5e"
+      }
+    ]
+  },
+  "connectors": null
+}

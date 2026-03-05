@@ -1,7 +1,0 @@
-{
-  "build": {
-    "preset": "typescript",
-    "entry": "index.ts"
-  },
-  "custom": {}
-}

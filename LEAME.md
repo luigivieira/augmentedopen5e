@@ -124,11 +124,37 @@ Puedes emular localmente el entorno de Azion Edge Functions para probar cambios 
 
    Esto abrirá automáticamente tu navegador en `http://localhost:3333/docs`, donde podrás visualizar la especificación y probar directamente los endpoints.
 
-Desplegar en Azion (requiere Azion CLI):
+### Estrategia de Implementación (Deploy)
+
+Este proyecto utiliza una configuración de doble entorno (Staging y Producción), determinada dentro de `azion.config.ts`. Los recursos creados en Azion recibirán automáticamente un sufijo (`-staging` o `-prod`) añadido a sus nombres, de acuerdo con el entorno de destino.
+
+#### 1. Despliegue Local para Staging (Pruebas)
+
+Para desplegar una versión de prueba directamente desde su máquina local hacia la red Edge de Azion:
 
 ```bash
-pnpm deploy
+pnpm deploy:staging
 ```
+
+Esto garantiza que su aplicación de prueba y las "edge functions" asociadas sean creadas de forma controlada bajo el espacio de nombres (namespace) `augmentedopen5e-staging`.
+
+#### 2. Despliegue de Producción (GitHub Actions)
+
+Los despliegues de producción están completamente automatizados a través de GitHub Actions cada vez que usted actualiza (push) la rama `main`.
+
+> **Importante para Forks:** Si usted bifurca (make a fork) este proyecto, el "token" oficial de despliegue original no es transferido por razones de seguridad. Para habilitar el canal de CI/CD integrado en su bifurcación:
+>
+> 1. Cree un "Personal Token" directamente en su Panel de Azion.
+> 2. Vaya al repositorio de su GitHub siguiendo: **Settings** -> **Secrets and variables** -> **Actions**.
+> 3. Agregue un nuevo repositorio de secreto ("repository secret") nombrado como `AZION_PERSONAL_TOKEN` y pegue su token recientemente generado adentro.
+
+El modelo de automatización ejecuta el comando equivalente a:
+
+```bash
+pnpm deploy:prod
+```
+
+Este comando finalmente despliega online su aplicación oficial bajo el contenedor aislado de recursos `augmentedopen5e-prod`, de forma directa y sin interferir con sus recursos locales de "staging".
 
 ## Licencia
 
