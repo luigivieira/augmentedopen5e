@@ -50,6 +50,7 @@ database-debug.log*
 # =========================
 .DS_Store
 *.pem
+.azion/
 .vercel/
 *.tsbuildinfo
 next-env.d.ts
