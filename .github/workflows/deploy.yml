@@ -52,7 +52,7 @@ jobs:
         run: azion login --token ${{ secrets.AZION_PERSONAL_TOKEN }} --yes --silent || true
 
       - name: Build Edge Function
-        run: azion build
+        run: azion build --config-dir azion/production
 
       - name: Build and Deploy to Production
         run: pnpm run deploy:prod

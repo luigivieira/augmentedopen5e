@@ -5,7 +5,7 @@
   "env": "production",
   "prefix": "",
   "rotate-prefix": true,
-  "not-first-run": false,
+  "not-first-run": true,
   "function": [],
   "application": {
     "id": 0,
