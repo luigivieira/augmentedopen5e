@@ -128,23 +128,33 @@ Puedes emular localmente el entorno de Azion Edge Functions para probar cambios 
 
 Este proyecto usa una configuración de doble entorno (Staging y Producción) definida en `azion.config.ts`. Los recursos creados en Azion reciben automáticamente el sufijo `-staging` o `-prod`.
 
-Los archivos de estado `azion.json` (en `azion/staging/` y `azion/production/`) **no están confirmados en el repositorio**. El flag `--sync` instruye al CLI a detectar y reconciliar automáticamente los recursos existentes en la cuenta de Azion antes de cada despliegue.
+Los archivos de estado `azion.json` (en `azion/staging/` y `azion/production/`) **están confirmados en el repositorio** para garantizar la consistencia del despliegue en diferentes entornos y pipelines de CI/CD.
 
-#### 1. Despliegue de Staging (local)
+#### 1. Configuración para Nuevos Colaboradores
+
+Si acabas de clonar el repositorio y necesitas autorizar tus propios recursos de aplicación en Azion, ejecuta el comando de reinicio:
+
+```bash
+pnpm reset
+```
+
+Esto genera los archivos `azion.json` de arranque. Tu primer `pnpm deploy` creará los recursos y actualizará estos archivos con los nuevos IDs.
+
+#### 2. Despliegue de Staging (local)
 
 ```bash
 pnpm deploy:staging
 ```
 
-Construye y despliega la edge function en el namespace `augmentedopen5e-staging`. En la primera ejecución el CLI crea los recursos; en las siguientes, los actualiza.
+Construye y despliega la edge function en el namespace `augmentedopen5e-staging`. En la primera ejecución (después de `pnpm reset`), el CLI crea los recursos; en las siguientes, los actualiza utilizando los IDs almacenados en `azion.json`.
 
-#### 2. Despliegue de Producción (local o GitHub Actions)
+#### 3. Despliegue de Producción (local o GitHub Actions)
 
 ```bash
 pnpm deploy:prod
 ```
 
-Construye y despliega en el namespace `augmentedopen5e-prod`. Puede ejecutarse localmente o a través del pipeline automatizado de GitHub Actions en cada push a la rama `main`.
+Construye y despliega en el namespace `augmentedopen5e-prod`. Utiliza los IDs confirmados en el repositorio para asegurar que siempre se actualice la aplicación correcta.
 
 > **Importante para Forks:**
 >

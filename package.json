@@ -10,8 +10,9 @@
     "open": "pnpm dlx open-cli http://localhost:3333/docs",
     "build:staging": "azion build --config-dir azion/staging",
     "build:prod": "azion build --config-dir azion/production",
-    "deploy:staging": "pnpm build:staging && AZION_ENV=staging azion deploy --local --config-dir azion/staging --sync --skip-build -y",
-    "deploy:prod": "pnpm build:prod && AZION_ENV=production azion deploy --local --config-dir azion/production --sync --skip-build -y"
+    "reset": "node scripts/reset-azion-state.js",
+    "deploy:staging": "pnpm build:staging && AZION_ENV=staging azion deploy --local --config-dir azion/staging --skip-build -y",
+    "deploy:prod": "pnpm build:prod && AZION_ENV=production azion deploy --local --config-dir azion/production --skip-build -y"
   },
   "keywords": [
     "azion",

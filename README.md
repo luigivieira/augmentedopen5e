@@ -128,23 +128,33 @@ You can emulate the Azion Edge Functions environment locally to test changes thr
 
 This project uses a dual-environment configuration (Staging and Production) defined in `azion.config.ts`. Azion resources automatically receive a `-staging` or `-prod` suffix based on the environment.
 
-The `azion.json` state files (in `azion/staging/` and `azion/production/`) are **not committed to the repository**. The `--sync` flag instructs the CLI to automatically detect and reconcile existing resources in your Azion account before every deploy, so there is no need to manage these files manually.
+The `azion.json` state files (in `azion/staging/` and `azion/production/`) are **committed to the repository** to ensure deployment consistency across different environments and CI/CD pipelines.
 
-#### 1. Local Staging Deployment
+#### 1. Setup for New Contributors
+
+If you have just cloned the repository and need to authorize your own Azion application resources, run the reset command:
+
+```bash
+pnpm reset
+```
+
+This generates the bootstrap `azion.json` files. Your first `pnpm deploy` will then create the resources and update these files with the new IDs.
+
+#### 2. Local Staging Deployment
 
 ```bash
 pnpm deploy:staging
 ```
 
-Builds the edge function and deploys it to Azion under the `augmentedopen5e-staging` namespace. On the first run the CLI creates the resources; on subsequent runs it updates them.
+Builds the edge function and deploys it to Azion under the `augmentedopen5e-staging` namespace. On the first run (after `pnpm reset`), the CLI creates the resources; on subsequent runs, it updates them using the IDs stored in `azion.json`.
 
-#### 2. Deployment (Local or GitHub Actions)
+#### 3. Production Deployment (Local or GitHub Actions)
 
 ```bash
 pnpm deploy:prod
 ```
 
-Builds and deploys the production edge function under the `augmentedopen5e-prod` namespace. Can be run locally or via the automated GitHub Actions pipeline on every push to `main`.
+Builds and deploys the production edge function under the `augmentedopen5e-prod` namespace. It uses the IDs committed in the repository to ensure it always updates the correct application.
 
 > **Important for Forks:**
 >

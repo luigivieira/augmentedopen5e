@@ -1,0 +1,58 @@
+{
+  "name": "augmentedopen5e",
+  "bucket": "",
+  "preset": "typescript",
+  "env": "staging",
+  "prefix": "20260305035421",
+  "rotate-prefix": false,
+  "not-first-run": true,
+  "function": [
+    {
+      "id": 51478,
+      "name": "augmentedopen5e-staging-function",
+      "file": "",
+      "args": "./azion/args.json",
+      "instance-id": 46222,
+      "instance-name": "",
+      "cache-id": 0
+    }
+  ],
+  "application": {
+    "id": 1772692354,
+    "name": "augmentedopen5e-staging-app"
+  },
+  "domain": {
+    "id": 0,
+    "name": "__DEFAULT__",
+    "domain_name": "",
+    "url": ""
+  },
+  "rt-purge": {
+    "purge_on_publish": true
+  },
+  "origin": null,
+  "rules-engine": {
+    "created": false,
+    "rules": [
+      {
+        "id": 521391,
+        "name": "Execute Function",
+        "phase": "request"
+      }
+    ]
+  },
+  "cache-settings": null,
+  "workloads": {
+    "id": 1772696588,
+    "name": "augmentedopen5e-staging-workload",
+    "domains": [],
+    "url": "https://yhcakynjtmm.map.azionedge.net",
+    "deployment_id": [
+      {
+        "id": 184554,
+        "name": "augmentedopen5e-staging-deployment"
+      }
+    ]
+  },
+  "connectors": null
+}

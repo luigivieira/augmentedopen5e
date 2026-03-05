@@ -122,29 +122,57 @@ Você pode emular o ambiente do Azion Edge Functions localmente para testar alte
    pnpm open
    ```
 
+3. **Inicie o Emulador:**
+
+   Em um primeiro terminal, execute:
+
+   ```bash
+   pnpm emulate
+   ```
+
+   Este comando executa um servidor local que emula o ambiente de Edge (`azion dev`).
+
+4. **Abra a Documentação da API:**
+
+   Em um segundo terminal, execute:
+
+   ```bash
+   pnpm open
+   ```
+
    Isto abrirá automaticamente o seu navegador padrão em `http://localhost:3333/docs` de onde você poderá visualizar a especificação e testar os endpoints diretamente pela UI.
 
 ### Estratégia de Deploy
 
 Este projeto usa uma configuração de duplo-ambiente (Staging e Produção) definida em `azion.config.ts`. Os recursos criados na Azion recebem automaticamente o sufixo `-staging` ou `-prod`.
 
-Os arquivos de estado `azion.json` (em `azion/staging/` e `azion/production/`) **não são commitados no repositório**. O flag `--sync` instrui o CLI a detectar e reconciliar automaticamente os recursos existentes na conta Azion antes de cada deploy.
+Os arquivos de estado `azion.json` (em `azion/staging/` e `azion/production/`) **são commitados no repositório** para garantir a consistência do deploy entre diferentes ambientes e pipelines de CI/CD.
 
-#### 1. Deploy de Staging (local)
+#### 1. Configuração para Novos Colaboradores
+
+Caso tenha acabado de clonar o repositório e precise autorizar seus próprios recursos de aplicação na Azion, execute o comando de reset:
+
+```bash
+pnpm reset
+```
+
+Isto gera os arquivos `azion.json` básicos. Seu primeiro `pnpm deploy` criará os recursos e atualizará estes arquivos com os novos IDs.
+
+#### 2. Deploy de Staging (local)
 
 ```bash
 pnpm deploy:staging
 ```
 
-Faz o build e o deploy da edge function no namespace `augmentedopen5e-staging`. Na primeira execução o CLI cria os recursos; nas subsequentes, atualiza.
+Faz o build e o deploy da edge function no namespace `augmentedopen5e-staging`. Na primeira execução (após o `pnpm reset`), o CLI cria os recursos; nas subsequentes, ele os atualiza utilizando os IDs armazenados no `azion.json`.
 
-#### 2. Deploy de Produção (local ou GitHub Actions)
+#### 3. Deploy de Produção (local ou GitHub Actions)
 
 ```bash
 pnpm deploy:prod
 ```
 
-Faz o build e o deploy no namespace `augmentedopen5e-prod`. Pode ser executado localmente ou pelo pipeline automatizado do GitHub Actions a cada push para a branch `main`.
+Faz o build e o deploy no namespace `augmentedopen5e-prod`. Ele utiliza os IDs commitados no repositório para garantir que sempre atualize a aplicação correta.
 
 > **Importante para Forks:**
 >
