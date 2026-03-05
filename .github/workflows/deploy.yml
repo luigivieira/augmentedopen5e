@@ -46,10 +46,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Azion CLI
-        run: npm install -g azion
+        run: pnpm add -g azion
 
       - name: Authenticate Azion CLI
-        run: azion login --token ${{ secrets.AZION_PERSONAL_TOKEN }}
+        run: pnpm exec azion login --token ${{ secrets.AZION_PERSONAL_TOKEN }}
 
       - name: Build and Deploy to Production
         run: pnpm run deploy:prod
