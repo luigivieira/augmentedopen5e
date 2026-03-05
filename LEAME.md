@@ -60,7 +60,7 @@ Para instalar la CLI oficial de Azion:
 **Para macOS/Linux**:
 
 ```bash
-curl -sSfL https://get.azion.com | sh
+curl -fsSL https://cli.azion.app/install.sh | bash
 ```
 
 **Para Windows (vía Winget)**:

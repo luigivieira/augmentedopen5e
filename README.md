@@ -60,7 +60,7 @@ Install it and authenticate before deploying:
 **For macOS/Linux**:
 
 ```bash
-curl -sSfL https://get.azion.com | sh
+curl -fsSL https://cli.azion.app/install.sh | bash
 ```
 
 **For Windows (via Winget)**:
