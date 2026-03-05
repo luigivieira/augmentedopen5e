@@ -10,10 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     name: Deploy API to Azion Edge
 
-    # We must explicitly set this variable to let the gated script pass
-    env:
-      CI: true
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -50,9 +46,6 @@ jobs:
 
       - name: Authenticate Azion CLI
         run: azion login --token ${{ secrets.AZION_PERSONAL_TOKEN }} --yes --silent || true
-
-      - name: Build Edge Function
-        run: azion build --config-dir azion/production
 
       - name: Deploy to Production
         run: pnpm run deploy:prod

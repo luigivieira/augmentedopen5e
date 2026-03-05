@@ -8,8 +8,10 @@
     "test": "vitest",
     "emulate": "azion dev",
     "open": "pnpm dlx open-cli http://localhost:3333/docs",
-    "deploy:staging": "if [ \"$CI\" = \"true\" ]; then echo 'Do not run staging on CI.' && exit 1; else AZION_ENV=staging azion deploy --local --config-dir azion/staging -y; fi",
-    "deploy:prod": "if [ \"$CI\" != \"true\" ]; then echo 'Only run production deploy in CI.' && exit 1; else AZION_ENV=production azion deploy --local --config-dir azion/production -y; fi"
+    "build:staging": "azion build --config-dir azion/staging",
+    "build:prod": "azion build --config-dir azion/production",
+    "deploy:staging": "pnpm build:staging && AZION_ENV=staging azion deploy --local --config-dir azion/staging --sync --skip-build -y",
+    "deploy:prod": "pnpm build:prod && AZION_ENV=production azion deploy --local --config-dir azion/production --sync --skip-build -y"
   },
   "keywords": [
     "azion",

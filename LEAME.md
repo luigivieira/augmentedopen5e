@@ -126,47 +126,30 @@ Puedes emular localmente el entorno de Azion Edge Functions para probar cambios 
 
 ### Estrategia de Implementación (Deploy)
 
-Este proyecto utiliza una configuración de doble entorno (Staging y Producción), determinada dentro de `azion.config.ts`. Los recursos creados en Azion recibirán automáticamente un sufijo (`-staging` o `-prod`) añadido a sus nombres, de acuerdo con el entorno de destino.
+Este proyecto usa una configuración de doble entorno (Staging y Producción) definida en `azion.config.ts`. Los recursos creados en Azion reciben automáticamente el sufijo `-staging` o `-prod`.
 
-#### 1. Despliegue Local para Staging (Pruebas)
+Los archivos de estado `azion.json` (en `azion/staging/` y `azion/production/`) **no están confirmados en el repositorio**. El flag `--sync` instruye al CLI a detectar y reconciliar automáticamente los recursos existentes en la cuenta de Azion antes de cada despliegue.
 
-Para desplegar una versión de prueba directamente desde su máquina local hacia la red Edge de Azion:
+#### 1. Despliegue de Staging (local)
 
 ```bash
 pnpm deploy:staging
 ```
 
-- Este comando crea el archivo `azion/staging/azion.json` localmente. Ese archivo está **ignorado por Git** (ver `.gitignore`) y puede borrarse en cualquier momento si desea recrear los recursos de staging.
-- Al volver a ejecutar el comando, la aplicación `augmentedopen5e-staging` y su function serán recreadas.
+Construye y despliega la edge function en el namespace `augmentedopen5e-staging`. En la primera ejecución el CLI crea los recursos; en las siguientes, los actualiza.
 
-#### 2. Despliegue de Producción (GitHub Actions)
-
-Los despliegues de producción están completamente automatizados a través de GitHub Actions cada vez que se hace push a la rama `main`.
-
-> **Importante para Forks:**
->
-> 1. Elimine `azion/production/azion.json` (contiene IDs de la cuenta Azion del repositorio original).
-> 2. Ejecute `azion init --config-dir azion/production` para crear un archivo bootstrap para su propia cuenta.
-> 3. Cree un Personal Token en su consola de Azion.
-> 4. En su repositorio de GitHub, vaya a **Settings → Secrets and variables → Actions** y agregue un secret llamado `AZION_PERSONAL_TOKEN` con el valor del token.
-
-El pipeline de CI ejecuta:
+#### 2. Despliegue de Producción (local o GitHub Actions)
 
 ```bash
 pnpm deploy:prod
 ```
 
-La primera vez (después de eliminar el `azion/production/azion.json` existente), el CLI creará los recursos de producción (`augmentedopen5e-prod-app`, `augmentedopen5e-prod-function`, etc.) y generará un nuevo `azion/production/azion.json` con los IDs reales.
+Construye y despliega en el namespace `augmentedopen5e-prod`. Puede ejecutarse localmente o a través del pipeline automatizado de GitHub Actions en cada push a la rama `main`.
 
-**Después de un despliegue exitoso**, haga commit del `azion/production/azion.json` generado:
-
-```bash
-git add azion/production/azion.json
-git commit -m "chore: add production Azion state"
-git push
-```
-
-A partir de ese momento, el CI leerá ese archivo y realizará solo **actualizaciones** en los recursos existentes, manteniendo estable el entorno de producción.
+> **Importante para Forks:**
+>
+> 1. Cree un Personal Token en su consola de Azion.
+> 2. En su repositorio de GitHub, vaya a **Settings → Secrets and variables → Actions** y agregue un secret llamado `AZION_PERSONAL_TOKEN` con el valor del token.
 
 ## Licencia
 

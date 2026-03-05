@@ -74,5 +74,6 @@ certificates
 .vulcan
 .open-next
 azion_deploy_debug.log
-# Azion state files
+# Azion state files (auto-managed by CLI via --sync, not committed)
 azion/staging/azion.json
+azion/production/azion.json
