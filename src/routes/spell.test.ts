@@ -102,7 +102,7 @@ describe('handleSpellRequest', () => {
     expect(data.error).toEqual(expect.stringContaining('Invalid locale format'));
   });
 
-  it('should call Azion.AI.run correctly on Cache MISS if locale is not en-us, save and return fallback immediately', async () => {
+  it('should call Azion.AI.run correctly on Cache MISS if locale is not en-us, save and return 202 immediately', async () => {
     mockGetCachedSpell.mockResolvedValueOnce(null); // Cache MISS
     mockGetBaseSpell.mockResolvedValueOnce({
       locale: 'en-us',
@@ -122,14 +122,9 @@ describe('handleSpellRequest', () => {
     expect(mockGetCachedSpell).toHaveBeenCalledWith('fireball', 'pt-br');
     expect(mockGetBaseSpell).toHaveBeenCalledWith('fireball', undefined);
 
-    expect(response.status).toBe(200);
-    const data = await response.json();
-    expect(data).toEqual({
-      locale: 'en-us',
-      _translationPending: true,
-      name: 'Fireball',
-      desc: 'A bright streak flashes...',
-    });
+    expect(response.status).toBe(202);
+    const text = await response.text();
+    expect(text).toBe(''); // Empty body for 202
 
     // Translation started
     expect(mockAzionRun).toHaveBeenCalled();

@@ -1,59 +1,34 @@
-import { fetchOpen5e, Open5eApiError } from '../services/open5e';
-
 /**
  * Handles requests to the /api/spells endpoint.
- * Status and discovery endpoint.
+ * Status and discovery endpoint — reads exclusively from the KV cache.
  */
+import { getSpellCatalog } from '../services/spellRepository';
+
 export async function handleSpellsRequest(request: Request): Promise<Response> {
   const url = new URL(request.url);
-  const searchParams = url.searchParams;
-  const localeParam = searchParams.get('locale');
+  const localeParam = url.searchParams.get('locale');
 
   try {
-    const data = await fetchOpen5e<{ count: number; results: { slug: string }[] }>('spells/', {
-      params: { limit: 5000 },
-    });
-
-    const total = data.count;
-    const allSlugs = data.results.map((r) => r.slug);
-
-    const enUsStatus = {
-      locale: 'en-us',
-      total,
-      cached: total,
-      spells: allSlugs,
-    };
-
-    let responseData = [enUsStatus];
-
     if (localeParam) {
       const targetLocale = localeParam.toLowerCase();
-
-      if (targetLocale === 'en-us') {
-        responseData = [enUsStatus];
-      } else {
-        // Se pedir um locale não en-us, retorna zero cached
-        responseData = [
-          {
-            locale: targetLocale,
-            total,
-            cached: 0,
-            spells: [],
-          },
-        ];
-      }
+      const spells = await getSpellCatalog(targetLocale);
+      return new Response(
+        JSON.stringify([{ locale: targetLocale, cached: spells.length, spells }]),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      );
     }
 
-    return new Response(JSON.stringify(responseData), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    // No locale param: return all locales we have in cache
+    // We always at least have en-us (or will, when it's cached)
+    const enUsSpells = await getSpellCatalog('en-us');
+    return new Response(
+      JSON.stringify([{ locale: 'en-us', cached: enUsSpells.length, spells: enUsSpells }]),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    );
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'An unknown error occurred';
-    const status = error instanceof Open5eApiError ? error.status : 500;
-
     return new Response(JSON.stringify({ error: errorMsg }), {
-      status,
+      status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
   }

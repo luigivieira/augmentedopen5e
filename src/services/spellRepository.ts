@@ -42,7 +42,7 @@ export async function getCachedSpell(
 }
 
 /**
- * Saves a spell to the Azion KV Storage.
+ * Saves a spell to the Azion KV Storage and updates the catalog for that locale.
  */
 export async function saveCachedSpell(
   slug: string,
@@ -50,7 +50,42 @@ export async function saveCachedSpell(
 ): Promise<void> {
   const key = getSpellCacheKey(slug, data.locale);
   const bucket = getSpellBucketName();
-  return setCacheItem(bucket, key, data);
+  await setCacheItem(bucket, key, data);
+  // Update the catalog for this locale
+  await addSlugToCatalog(data.locale, slug);
+}
+
+/**
+ * Gets the catalog key for a given locale.
+ */
+export function getSpellCatalogKey(locale: string): string {
+  return `catalog_${locale.toLowerCase()}`;
+}
+
+/**
+ * Retrieves the list of cached spell slugs for a given locale.
+ * Returns an empty array if no catalog is found.
+ */
+export async function getSpellCatalog(locale: string): Promise<string[]> {
+  const key = getSpellCatalogKey(locale);
+  const bucket = getSpellBucketName();
+  const catalog = await getCacheItem<string[]>(bucket, key);
+  return catalog ?? [];
+}
+
+/**
+ * Adds a slug to the catalog for a given locale.
+ * Idempotent: if the slug is already in the catalog, it won't be duplicated.
+ */
+export async function addSlugToCatalog(locale: string, slug: string): Promise<void> {
+  const key = getSpellCatalogKey(locale);
+  const bucket = getSpellBucketName();
+  const existing = await getCacheItem<string[]>(bucket, key);
+  const slugs = existing ?? [];
+  if (!slugs.includes(slug)) {
+    slugs.push(slug);
+    await setCacheItem(bucket, key, slugs);
+  }
 }
 
 /**

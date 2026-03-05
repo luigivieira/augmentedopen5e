@@ -12,23 +12,21 @@ export async function getCacheItem<T>(bucket: string, key: string): Promise<T | 
       return null;
     }
 
-    // In many Edge KV platforms the body can be a stream or a pre-buffered string
+    let text = '';
     if (typeof storageItem.body === 'string') {
-      return JSON.parse(storageItem.body);
+      text = storageItem.body;
+    } else if (
+      typeof storageItem.body === 'object' &&
+      storageItem.body !== null &&
+      'text' in storageItem.body &&
+      typeof (storageItem.body as { text: unknown }).text === 'function'
+    ) {
+      text = await (storageItem.body as { text: () => Promise<string> }).text();
     } else {
-      // If it's a stream, we consume it into a string
-      const reader = storageItem.body.getReader();
-      const decoder = new TextDecoder();
-      let chunks = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          break;
-        }
-        chunks += decoder.decode(value, { stream: true });
-      }
-      return JSON.parse(chunks);
+      // Consume whatever stream/buffer it is using the native Edge Response API wrapper
+      text = await new Response(storageItem.body as BodyInit).text();
     }
+    return JSON.parse(text);
   } catch (error) {
     console.error(`Failed to retrieve cache for key ${key} from bucket ${bucket}`, error);
     return null; // A cache miss is better than a hard crash

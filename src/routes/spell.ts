@@ -73,11 +73,6 @@ export async function handleSpellRequest(
     }
 
     // 3. Target is NOT en-us: Setup fallback and trigger background translation
-    const fallbackData = {
-      _translationPending: true,
-      ...data,
-    };
-
     const runTranslationAndCache = async () => {
       try {
         const translatedData = await translateSpellFields(data, targetLocale);
@@ -95,12 +90,11 @@ export async function handleSpellRequest(
       );
     }
 
-    // Return the fallback immediately to prevent timeouts
-    return new Response(JSON.stringify(fallbackData), {
-      status: 200,
+    // Return 202 Accepted to indicate processing has started, but content is not available yet.
+    return new Response(null, {
+      status: 202,
       headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=10', // Short cache so client retries soon
+        'Cache-Control': 'no-store', // Do not cache the 202 Response
       },
     });
   } catch (error) {
