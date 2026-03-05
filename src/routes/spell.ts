@@ -1,10 +1,16 @@
-import { SpellData, translateSpellFields } from '../services/aiTranslation'; /**
+/**
  * Handles requests to the /api/spell endpoint.
  * Returns a single spell by slug.
  */
-import { getCachedSpell, saveCachedSpell } from '../services/kvStorage';
-import { fetchOpen5e, Open5eApiError } from '../services/open5e';
-export async function handleSpellRequest(request: Request): Promise<Response> {
+import type { EdgeFetchEvent } from '../../index';
+import { translateSpellFields } from '../services/aiTranslation';
+import { Open5eApiError } from '../services/open5e';
+import { getBaseSpell, getCachedSpell, saveCachedSpell } from '../services/spellRepository';
+
+export async function handleSpellRequest(
+  request: Request,
+  event?: EdgeFetchEvent,
+): Promise<Response> {
   const url = new URL(request.url);
   const searchParams = url.searchParams;
   const slug = searchParams.get('slug');
@@ -52,30 +58,49 @@ export async function handleSpellRequest(request: Request): Promise<Response> {
       });
     }
 
-    // 2. Cache MISS: Fetch from origin
-    const data = await fetchOpen5e<SpellData>(`spells/${slug}/`);
-
-    let responseData: SpellData & { locale: string };
+    // 2. Cache MISS for targetLocale: Get base en-us spell
+    // This will check if en-us is in cache first, otherwise fetch from Open5e API and cache it.
+    const data = await getBaseSpell(slug, event);
 
     if (targetLocale === 'en-us') {
-      responseData = {
-        locale: 'en-us',
-        ...data,
-      };
-    } else {
-      // 3. AI Translation
-      responseData = await translateSpellFields(data, targetLocale);
+      return new Response(JSON.stringify(data), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=60',
+        },
+      });
     }
 
-    // 4. Save to Cache asynchronously (no block, technically handled by Node/Deno environment depending on how Azion manages unawaited promises. Handled safely here.)
-    // In Edge functions, background tasks should ideally use `event.waitUntil` if exposed, but standard await is safest for guarantees.
-    await saveCachedSpell(slug, responseData);
+    // 3. Target is NOT en-us: Setup fallback and trigger background translation
+    const fallbackData = {
+      _translationPending: true,
+      ...data,
+    };
 
-    return new Response(JSON.stringify(responseData), {
+    const runTranslationAndCache = async () => {
+      try {
+        const translatedData = await translateSpellFields(data, targetLocale);
+        await saveCachedSpell(slug, translatedData);
+      } catch (err) {
+        console.error(`Background translation failed for ${slug} to ${targetLocale}:`, err);
+      }
+    };
+
+    if (event?.waitUntil) {
+      event.waitUntil(runTranslationAndCache());
+    } else {
+      runTranslationAndCache().catch((err) =>
+        console.error('Background translation unawaited error:', err),
+      );
+    }
+
+    // Return the fallback immediately to prevent timeouts
+    return new Response(JSON.stringify(fallbackData), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=60',
+        'Cache-Control': 'public, max-age=10', // Short cache so client retries soon
       },
     });
   } catch (error) {

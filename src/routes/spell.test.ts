@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getCachedSpell, saveCachedSpell } from '../services/kvStorage';
-import { fetchOpen5e, Open5eApiError } from '../services/open5e';
+import { Open5eApiError } from '../services/open5e';
+import { getBaseSpell, getCachedSpell, saveCachedSpell } from '../services/spellRepository';
 import { handleSpellRequest } from './spell';
 
 // Mock the open5e service
@@ -20,16 +20,17 @@ vi.mock('../services/open5e', () => {
   };
 });
 
-// Mock the KV Storage service
-vi.mock('../services/kvStorage', () => {
+// Mock the spellRepository service
+vi.mock('../services/spellRepository', () => {
   return {
+    getBaseSpell: vi.fn(),
     getCachedSpell: vi.fn(),
     saveCachedSpell: vi.fn(),
   };
 });
 
 describe('handleSpellRequest', () => {
-  const mockFetchOpen5e = vi.mocked(fetchOpen5e);
+  const mockGetBaseSpell = vi.mocked(getBaseSpell);
   const mockGetCachedSpell = vi.mocked(getCachedSpell);
   const mockSaveCachedSpell = vi.mocked(saveCachedSpell);
 
@@ -70,27 +71,22 @@ describe('handleSpellRequest', () => {
     const response = await handleSpellRequest(request);
 
     expect(mockGetCachedSpell).toHaveBeenCalledWith('fireball', 'en-us');
-    expect(mockFetchOpen5e).not.toHaveBeenCalled(); // Cache HIT prevented fetch
+    expect(mockGetBaseSpell).not.toHaveBeenCalled(); // Cache HIT prevented fetch
 
     expect(response.status).toBe(200);
     const data = await response.json();
     expect(data.name).toBe('Cached Fireball');
   });
 
-  it('should fetch from Open5e on Cache MISS, save to cache and inject locale', async () => {
+  it('should fetch from base spell repository on Cache MISS (en-us)', async () => {
     mockGetCachedSpell.mockResolvedValueOnce(null); // Cache MISS
-    mockFetchOpen5e.mockResolvedValueOnce({ name: 'Fireball' });
-    mockSaveCachedSpell.mockResolvedValueOnce();
+    mockGetBaseSpell.mockResolvedValueOnce({ locale: 'en-us', name: 'Fireball' });
 
     const request = new Request('http://localhost/api/spell?slug=fireball&locale=en-us');
     const response = await handleSpellRequest(request);
 
     expect(mockGetCachedSpell).toHaveBeenCalledWith('fireball', 'en-us');
-    expect(mockFetchOpen5e).toHaveBeenCalledWith('spells/fireball/');
-    expect(mockSaveCachedSpell).toHaveBeenCalledWith('fireball', {
-      locale: 'en-us',
-      name: 'Fireball',
-    });
+    expect(mockGetBaseSpell).toHaveBeenCalledWith('fireball', undefined);
 
     expect(response.status).toBe(200);
     const data = await response.json();
@@ -106,9 +102,10 @@ describe('handleSpellRequest', () => {
     expect(data.error).toEqual(expect.stringContaining('Invalid locale format'));
   });
 
-  it('should call Azion.AI.run correctly on Cache MISS if locale is not en-us, save and return', async () => {
+  it('should call Azion.AI.run correctly on Cache MISS if locale is not en-us, save and return fallback immediately', async () => {
     mockGetCachedSpell.mockResolvedValueOnce(null); // Cache MISS
-    mockFetchOpen5e.mockResolvedValueOnce({
+    mockGetBaseSpell.mockResolvedValueOnce({
+      locale: 'en-us',
       name: 'Fireball',
       desc: 'A bright streak flashes...',
     });
@@ -123,8 +120,22 @@ describe('handleSpellRequest', () => {
     const response = await handleSpellRequest(request);
 
     expect(mockGetCachedSpell).toHaveBeenCalledWith('fireball', 'pt-br');
-    expect(mockFetchOpen5e).toHaveBeenCalledWith('spells/fireball/');
+    expect(mockGetBaseSpell).toHaveBeenCalledWith('fireball', undefined);
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data).toEqual({
+      locale: 'en-us',
+      _translationPending: true,
+      name: 'Fireball',
+      desc: 'A bright streak flashes...',
+    });
+
+    // Translation started
     expect(mockAzionRun).toHaveBeenCalled();
+
+    // Allow background operations to finish
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     // Verify system prompt model and arguments
     const callArgs = mockAzionRun.mock.calls[0];
@@ -138,19 +149,11 @@ describe('handleSpellRequest', () => {
       name: 'Bola de Fogo',
       desc: 'Um clarão brilhante...',
     });
-
-    expect(response.status).toBe(200);
-    const data = await response.json();
-    expect(data).toEqual({
-      locale: 'pt-br',
-      name: 'Bola de Fogo',
-      desc: 'Um clarão brilhante...',
-    });
   });
 
   it('should handle API errors from Open5e', async () => {
     const apiError = new Open5eApiError('Not found', 404, false);
-    mockFetchOpen5e.mockRejectedValueOnce(apiError);
+    mockGetBaseSpell.mockRejectedValueOnce(apiError);
 
     const request = new Request('http://localhost/api/spell?slug=xyz&locale=en-us');
     const response = await handleSpellRequest(request);

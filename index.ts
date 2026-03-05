@@ -2,11 +2,17 @@ import { handleDocsRequest } from './src/routes/docs';
 import { handleSpellRequest } from './src/routes/spell';
 import { handleSpellsRequest } from './src/routes/spells';
 
+export interface EdgeFetchEvent extends Event {
+  request: Request;
+  respondWith(response: Response | Promise<Response>): void;
+  waitUntil(promise: Promise<unknown>): void;
+}
+
 /**
  * Main Request Handler for the Edge Function.
  * This is the monolithic router that receives all incoming HTTP requests.
  */
-async function handleRequest(request: Request): Promise<Response> {
+async function handleRequest(request: Request, event?: EdgeFetchEvent): Promise<Response> {
   const url = new URL(request.url);
 
   // Router
@@ -15,7 +21,7 @@ async function handleRequest(request: Request): Promise<Response> {
   }
 
   if (url.pathname === '/api/spell') {
-    return handleSpellRequest(request);
+    return handleSpellRequest(request, event);
   }
 
   if (url.pathname === '/api/spells') {
@@ -32,13 +38,8 @@ async function handleRequest(request: Request): Promise<Response> {
   );
 }
 
-interface FetchEvent extends Event {
-  request: Request;
-  respondWith(response: Response | Promise<Response>): void;
-}
-
 if (typeof addEventListener !== 'undefined') {
-  addEventListener('fetch', ((event: FetchEvent) => {
-    event.respondWith(handleRequest(event.request));
+  addEventListener('fetch', ((event: EdgeFetchEvent) => {
+    event.respondWith(handleRequest(event.request, event));
   }) as EventListener);
 }
