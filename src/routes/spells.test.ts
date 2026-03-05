@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchOpen5e, Open5eApiError } from '../services/open5e';
+import { fetchOpen5e } from '../services/open5e';
 import { handleSpellsRequest } from './spells';
 
 // Mock the open5e service
@@ -26,68 +26,67 @@ describe('handleSpellsRequest', () => {
     vi.clearAllMocks();
   });
 
-  it('should pass no params if none are provided', async () => {
-    mockFetchOpen5e.mockResolvedValueOnce({ results: [] });
-    const request = new Request('http://localhost/api/spells');
+  it('should return all slugs correctly simulated for en-us', async () => {
+    mockFetchOpen5e.mockResolvedValueOnce({
+      count: 2,
+      results: [{ slug: 'fireball' }, { slug: 'acid-arrow' }],
+    });
+
+    const request = new Request('http://localhost/api/spells?locale=en-us');
     const response = await handleSpellsRequest(request);
 
-    expect(mockFetchOpen5e).toHaveBeenCalledWith('spells/', { params: {} });
+    expect(mockFetchOpen5e).toHaveBeenCalledWith('spells/', { params: { limit: 5000 } });
     expect(response.status).toBe(200);
     const data = await response.json();
-    expect(data).toEqual({ results: [] });
-  });
-
-  it('should map exact match query params properly', async () => {
-    mockFetchOpen5e.mockResolvedValueOnce({ results: [] });
-    const request = new Request(
-      'http://localhost/api/spells?name=Fireball&school=Evocation&slug=fireball&level=3rd-level&limit=10&page=2',
-    );
-    await handleSpellsRequest(request);
-
-    expect(mockFetchOpen5e).toHaveBeenCalledWith('spells/', {
-      params: {
-        name__iexact: 'Fireball',
-        school__iexact: 'Evocation',
-        slug__iexact: 'fireball',
-        level__iexact: '3rd-level',
-        limit: '10',
-        page: '2',
+    expect(data).toEqual([
+      {
+        locale: 'en-us',
+        total: 2,
+        cached: 2,
+        spells: ['fireball', 'acid-arrow'],
       },
-    });
+    ]);
   });
 
-  it('should map generic search query param properly', async () => {
-    mockFetchOpen5e.mockResolvedValueOnce({ results: [] });
-    const request = new Request('http://localhost/api/spells?search=explosion');
-    await handleSpellsRequest(request);
+  it('should return 0 cached and empty list simulated for non-en locales', async () => {
+    mockFetchOpen5e.mockResolvedValueOnce({
+      count: 2,
+      results: [{ slug: 'fireball' }, { slug: 'acid-arrow' }],
+    });
 
-    expect(mockFetchOpen5e).toHaveBeenCalledWith('spells/', {
-      params: {
-        search: 'explosion',
+    const request = new Request('http://localhost/api/spells?locale=pt-br');
+    const response = await handleSpellsRequest(request);
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data).toEqual([
+      {
+        locale: 'pt-br',
+        total: 2,
+        cached: 0,
+        spells: [],
       },
-    });
+    ]);
   });
 
-  it('should handle API errors and return the correct status', async () => {
-    const apiError = new Open5eApiError('Rate limited', 429, true);
-    mockFetchOpen5e.mockRejectedValueOnce(apiError);
+  it('should return only en-us simulation if no locale is provided', async () => {
+    mockFetchOpen5e.mockResolvedValueOnce({
+      count: 1,
+      results: [{ slug: 'fireball' }],
+    });
 
     const request = new Request('http://localhost/api/spells');
     const response = await handleSpellsRequest(request);
 
-    expect(response.status).toBe(429);
+    expect(response.status).toBe(200);
     const data = await response.json();
-    expect(data).toEqual({ error: 'Rate limited' });
-  });
-
-  it('should handle generic errors', async () => {
-    mockFetchOpen5e.mockRejectedValueOnce(new Error('Network failure'));
-
-    const request = new Request('http://localhost/api/spells');
-    const response = await handleSpellsRequest(request);
-
-    expect(response.status).toBe(500);
-    const data = await response.json();
-    expect(data).toEqual({ error: 'Network failure' });
+    expect(data).toEqual([
+      {
+        locale: 'en-us',
+        total: 1,
+        cached: 1,
+        spells: ['fireball'],
+      },
+    ]);
   });
 });

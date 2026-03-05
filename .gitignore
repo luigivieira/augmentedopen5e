@@ -77,3 +77,6 @@ azion_deploy_debug.log
 # Azion state files (auto-managed by CLI, committed to Git for consistency)
 # azion/staging/azion.json
 # azion/production/azion.json
+
+# Azion temporary emulation files
+azion-index-*.temp.ts
