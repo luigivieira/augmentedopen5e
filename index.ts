@@ -1,4 +1,5 @@
 import { handleDocsRequest } from './src/routes/docs';
+import { handleHomeRequest } from './src/routes/home';
 import { handleSpellRequest } from './src/routes/spell';
 import { handleSpellsRequest } from './src/routes/spells';
 
@@ -16,7 +17,11 @@ async function handleRequest(request: Request, event?: EdgeFetchEvent): Promise<
   const url = new URL(request.url);
 
   // Router
-  if (url.pathname === '/' || url.pathname === '/docs' || url.pathname === '/openapi.json') {
+  if (url.pathname === '/') {
+    return handleHomeRequest(request);
+  }
+
+  if (url.pathname === '/docs' || url.pathname === '/openapi.json') {
     return handleDocsRequest(request);
   }
 
