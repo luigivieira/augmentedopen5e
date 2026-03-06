@@ -35,7 +35,7 @@ declare global {
         put(
           key: string,
           value: string | Uint8Array | Blob | ReadableStream,
-          options?: { [key: string]: string },
+          options?: { [key: string]: string | number },
         ): Promise<void>;
       };
     };

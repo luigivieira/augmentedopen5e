@@ -59,8 +59,10 @@ export async function setCacheItem<T>(bucket: string, key: string, data: T): Pro
     // The Azion local emulator requires a binary buffer (Uint8Array/ArrayBuffer),
     // not a plain string. Passing a string causes it to be serialized as "[object Object]".
     const encoded = new TextEncoder().encode(jsonString);
+    // content-length must be a number (integer) — the production Azion runtime
+    // (serde_v8/Rust) rejects a string value with "expected: integer, got: string".
     await storage.put(key, encoded, {
-      'content-length': String(encoded.length),
+      'content-length': encoded.length,
       'content-type': 'application/json',
     });
   } catch (error) {
