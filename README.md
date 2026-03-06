@@ -8,7 +8,9 @@
 
 An open-source (MIT) REST API deployed on **Azion Edge Functions** that acts as an augmentation layer over the public [Open5e API](https://api.open5e.com/) for automatic translations from AI.
 
-It serves Dungeons & Dragons 5th Edition System Reference Document (SRD) content, while automatically extending it with AI-powered translations into different languages using **Azion AI Inference** (powered by [Qwen3 30B A3B Instruct](https://www.azion.com/pt-br/documentacao/produtos/ai/ai-inference/modelos/qwen3-30ba3b/)).
+It serves Dungeons & Dragons 5th Edition System Reference Document (SRD) content, while automatically extending it with AI-powered translations into different languages using the **Groq API** (powered by [llama-3.3-70b-versatile](https://console.groq.com/docs/models)).
+
+> **Why Groq instead of Azion AI Inference?** Azion AI Inference has significant usage limitations even on paid plans, which makes it unsuitable for a project like this. Groq offers a generous free tier with fast inference and excellent multilingual support.
 
 > **⚠️ CAUTION — Copyright Notice:** This project relies entirely on the open-source D&D 5e SRD (System Reference Document), which is licensed under Creative Commons (CC-BY). **The translations provided by this API are strictly machine-generated (via AI/LLMs) on-the-fly and are NOT official translations.** This project is not affiliated with, endorsed by, or meant to reproduce the copyrighted translated works of Wizards of the Coast or any of its localized publishing partners.
 
@@ -122,7 +124,13 @@ You can emulate the Azion Edge Functions environment locally to test changes thr
 rm .edge/storage/augmented_spells_kv-staging/*
 ```
 
-**AI Translation mock:** The local emulator does **not** call the real Azion AI inference endpoint. Instead, when the environment variable `MOCK_AI_LATENCY` is set (which `pnpm emulate` does automatically), translations return a placeholder text (`"[la-LA] Name"` for names and a Lorem Ipsum paragraph for descriptions). This lets you verify the full request/cache/background-job flow without consuming AI quota.
+**Groq API Key:** The local emulator calls the **real Groq API**. Before running `pnpm emulate`, create a `.env.local` file in the project root with your Groq API key:
+
+```env
+GROQ_API_KEY=your_key_here
+```
+
+This file is already listed in `.gitignore`. You can get a free API key at [console.groq.com](https://console.groq.com).
 
 ### Deployment Strategy
 
@@ -160,6 +168,7 @@ Builds and deploys the production edge function under the `augmentedopen5e-prod`
 >
 > 1. Create a Personal Token in your Azion console.
 > 2. In your GitHub repository go to **Settings → Secrets and variables → Actions** and add a secret named `AZION_PERSONAL_TOKEN` with the token value.
+> 3. Get your own Groq API key at [console.groq.com](https://console.groq.com) and configure it as the `GROQ_API_KEY` environment variable in your Azion application's Edge Functions settings (Azion Console → Edge Functions → your function → Environment Variables).
 
 ## License
 

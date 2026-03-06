@@ -8,7 +8,7 @@
     "format": "prettier --write .",
     "lint": "eslint . --fix",
     "test": "vitest",
-    "emulate": "MOCK_AI_LATENCY=2000 azion dev",
+    "emulate": "dotenv -e .env.local -- azion dev",
     "open": "pnpm dlx open-cli http://localhost:3333/",
     "build:staging": "AZION_ENV=staging azion build --config-dir azion/staging",
     "build:prod": "AZION_ENV=production azion build --config-dir azion/production",
@@ -31,6 +31,7 @@
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "dotenv-cli": "^8.0.0",
     "@types/node": "^25.3.3",
     "azion": "^3.1.2",
     "eslint": "^9.0.0",

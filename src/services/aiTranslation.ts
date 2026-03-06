@@ -11,14 +11,27 @@ export interface SpellData {
   [key: string]: unknown;
 }
 
+function getGroqApiKey(): string | undefined {
+  if (typeof process !== 'undefined' && process.env?.GROQ_API_KEY) {
+    return process.env.GROQ_API_KEY;
+  }
+  if (typeof globalThis !== 'undefined' && Azion?.env?.get) {
+    return Azion.env.get('GROQ_API_KEY');
+  }
+  return undefined;
+}
+
 /**
- * Service responsible for translating text fields of a spell using Azion AI Inference.
+ * Service responsible for translating text fields of a spell using the Groq API.
+ *
+ * Groq is used instead of Azion AI Inference due to usage limitations on paid Azion plans.
+ * Model: llama-3.3-70b-versatile — best free model on Groq for multilingual translation tasks,
+ * with 128K context and strong instruction-following across languages.
  */
 export async function translateSpellFields(
   originalSpell: SpellData,
   targetLocale: string,
 ): Promise<SpellData & { locale: string }> {
-  // Fields that actually need translation
   const fieldsToTranslate = {
     name: originalSpell.name,
     desc: originalSpell.desc,
@@ -37,63 +50,40 @@ Respond ONLY with the translated JSON object. Absolutely no conversational text 
 
   const userPrompt = JSON.stringify(fieldsToTranslate);
 
-  // --- MOCK LOGIC ---
-  let mockLatencyStr: string | undefined;
-  console.log(`[AI] Checking for MOCK_AI_LATENCY...`);
-
-  if (typeof process !== 'undefined' && process.env && process.env.MOCK_AI_LATENCY) {
-    mockLatencyStr = process.env.MOCK_AI_LATENCY;
-    console.log(`[AI] Found MOCK_AI_LATENCY in process.env: ${mockLatencyStr}`);
-  } else if (typeof globalThis !== 'undefined' && globalThis.Azion?.env?.get) {
-    mockLatencyStr = globalThis.Azion.env.get('MOCK_AI_LATENCY');
-    console.log(`[AI] Found MOCK_AI_LATENCY in Azion.env: ${mockLatencyStr}`);
-  } else {
-    console.log(`[AI] MOCK_AI_LATENCY not found. Using real AI Inference.`);
-  }
-
-  if (mockLatencyStr) {
-    const latency = parseInt(mockLatencyStr, 10) || 0;
-    console.log(`[AI MOCK] Detected MOCK_AI_LATENCY=${latency}ms. Simulating translation...`);
-
-    if (latency > 0) {
-      await new Promise((resolve) => setTimeout(resolve, latency));
+  try {
+    const apiKey = getGroqApiKey();
+    if (!apiKey) {
+      throw new Error('GROQ_API_KEY environment variable is not set.');
     }
 
-    const mockResponse: SpellData = {
-      name: `[la-LA] ${originalSpell.name || 'Unknown'}`,
-      desc: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
-      higher_level:
-        'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.',
-      material:
-        'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
-      duration: 'Permanent',
-      casting_time: '1 moment',
-      school: originalSpell.school,
-    };
+    const MODEL_ID = 'llama-3.3-70b-versatile';
+    console.log(`[AI] Running Groq inference with model '${MODEL_ID}'...`);
 
-    return {
-      ...originalSpell,
-      ...mockResponse,
-      locale: targetLocale,
-    };
-  }
-  // ------------------
-
-  try {
-    // Using Qwen3 30B Instruct FP8 — best available model for multilingual tasks on Azion AI Inference.
-    // Supports 256K context and explicitly designed for multilingual text generation.
-    // See: https://www.azion.com/pt-br/documentacao/produtos/ai/ai-inference/modelos/qwen3-30ba3b/
-    const MODEL_ID = 'qwen-qwen3-30b-a3b-instruct-2507-fp8';
-    console.log(`[AI] Running real AI Inference with model '${MODEL_ID}'...`);
-    const result = await Azion.AI.run(MODEL_ID, {
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: MODEL_ID,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        temperature: 0.1,
+      }),
     });
-    console.log(`[AI] Inference response received. Length: ${result.response?.length || 0} chars.`);
 
-    let rawOutput = result.response;
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Groq API error ${response.status}: ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log(`[AI] Groq response received.`);
+
+    let rawOutput: string = data.choices[0].message.content;
 
     // Cleanup: Some LLMs stubbornly put ```json ... ``` wrapper.
     if (rawOutput.startsWith('```json')) {
@@ -104,15 +94,13 @@ Respond ONLY with the translated JSON object. Absolutely no conversational text 
 
     const translatedFields = JSON.parse(rawOutput.trim());
 
-    // Merge translated fields back into original spell
     return {
       ...originalSpell,
       ...translatedFields,
-      locale: targetLocale, // Force override the locale field
+      locale: targetLocale,
     };
   } catch (error) {
     console.error('Translation failed:', error);
-    // Throw an API error so the router can handle it properly
-    throw new Open5eApiError('Failed to translate spell content using AI Inference.', 502, false);
+    throw new Open5eApiError('Failed to translate spell content using AI.', 502, false);
   }
 }

@@ -8,7 +8,9 @@
 
 Una API REST de código abierto (Licencia MIT) implementada en **Azion Edge Functions** que actúa como una capa de "aumento" (augmentation) sobre la [API pública de Open5e](https://api.open5e.com/) para traducciones automáticas hechas por IA.
 
-Sirve contenido del System Reference Document (SRD) de Dungeons & Dragons 5ª Edición y lo extiende automáticamente con traducciones generadas por Inteligencia Artificial usando **Azion AI Inference** (con el modelo [Qwen3 30B A3B Instruct](https://www.azion.com/pt-br/documentacao/produtos/ai/ai-inference/modelos/qwen3-30ba3b/)) a diferentes idiomas.
+Sirve contenido del System Reference Document (SRD) de Dungeons & Dragons 5ª Edición y lo extiende automáticamente con traducciones generadas por Inteligencia Artificial usando la **API de Groq** (con el modelo [llama-3.3-70b-versatile](https://console.groq.com/docs/models)) a diferentes idiomas.
+
+> **¿Por qué Groq en lugar de Azion AI Inference?** Azion AI Inference tiene limitaciones de uso significativas incluso en los planes de pago, lo que lo hace inadecuado para un proyecto como este. Groq ofrece un nivel gratuito generoso con inferencia rápida y un excelente soporte multilingüe.
 
 > **⚠️ ATENCIÓN — Derechos de Autor:** Este proyecto se basa enteramente en el SRD (System Reference Document) de D&D 5e, que está disponible bajo la licencia Creative Commons (CC-BY). **Las traducciones proporcionadas por esta API son estrictamente generadas por máquina (vía IA/LLMs) bajo demanda y NO SON traducciones oficiales.** Este proyecto no está afiliado, respaldado ni creado con la intención de reproducir las obras traducidas protegidas por derechos de autor de Wizards of the Coast o de cualquiera de sus socios locales de publicación.
 
@@ -122,7 +124,13 @@ Puedes emular localmente el entorno de Azion Edge Functions para probar cambios 
 rm .edge/storage/augmented_spells_kv-staging/*
 ```
 
-**Mock de traducción con IA:** El emulador local **no** llama al endpoint real de inferencia de IA de Azion. En cambio, cuando la variable de entorno `MOCK_AI_LATENCY` está definida (lo que `pnpm emulate` hace automáticamente), las traducciones devuelven un texto de marcador de posición (`"[la-LA] Nombre"` para nombres y un párrafo de Lorem Ipsum para descripciones). Esto permite verificar todo el flujo de solicitudes, caché y trabajo en segundo plano sin consumir cuota de IA.
+**Clave de API de Groq:** El emulador local llama a la **API real de Groq**. Antes de ejecutar `pnpm emulate`, crea un archivo `.env.local` en el directorio raíz del proyecto con tu clave de API de Groq:
+
+```env
+GROQ_API_KEY=tu_clave_aqui
+```
+
+Este archivo ya está incluido en `.gitignore`. Puedes obtener una clave gratuita en [console.groq.com](https://console.groq.com).
 
 ### Estrategia de Implementación (Deploy)
 
@@ -160,6 +168,7 @@ Construye y despliega en el namespace `augmentedopen5e-prod`. Utiliza los IDs co
 >
 > 1. Cree un Personal Token en su consola de Azion.
 > 2. En su repositorio de GitHub, vaya a **Settings → Secrets and variables → Actions** y agregue un secret llamado `AZION_PERSONAL_TOKEN` con el valor del token.
+> 3. Obtenga su propia clave de API de Groq en [console.groq.com](https://console.groq.com) y configúrela como la variable de entorno `GROQ_API_KEY` en la configuración de Edge Functions de su aplicación en Azion (Azion Console → Edge Functions → su función → Environment Variables).
 
 ## Licencia
 
