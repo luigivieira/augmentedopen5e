@@ -6,7 +6,7 @@
   <a href="LEAME.md"><img src="https://flagcdn.com/w40/es.png" alt="Español" width="22" style="opacity: 0.5;"></a>
 </p>
 
-An open-source (MIT) REST API deployed on **Azion Edge Functions** that acts as an augmentation layer over the public [Open5e API](https://api.open5e.com/) for automatic translations via AI.
+An open-source (MIT) REST API deployed on **[Azion Edge Functions](https://www.azion.com/en/documentation/products/build/edge-application/edge-functions/)** that acts as an augmentation layer over the public [Open5e API](https://api.open5e.com/) for automatic translations via AI.
 
 It serves Dungeons & Dragons 5th Edition System Reference Document (SRD) content, automatically extending it with AI-powered translations into different languages using the **Groq API** (powered by [llama-3.3-70b-versatile](https://console.groq.com/docs/models)).
 
