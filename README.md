@@ -112,6 +112,18 @@ You can emulate the Azion Edge Functions environment locally to test changes thr
 
    This will automatically open your default browser at `http://localhost:3333/docs` where you can view the specification and test endpoints directly.
 
+#### Local Emulator — Behaviour Notes
+
+**Locale format:** The `locale` parameter must always follow the `language-region` format (`pt-br`, `en-us`, `es-es`). Single codes such as `pt` or `en` are rejected with HTTP 400.
+
+**KV Storage on disk:** When running locally, the Azion emulator persists KV data to `.edge/storage/<bucket-name>/` inside the project root. Each cache key is stored as a plain file. To reset the local cache, simply delete the files in that directory:
+
+```bash
+rm .edge/storage/augmented_spells_kv-staging/*
+```
+
+**AI Translation mock:** The local emulator does **not** call the real Azion AI inference endpoint. Instead, when the environment variable `MOCK_AI_LATENCY` is set (which `pnpm emulate` does automatically), translations return a placeholder text (`"[la-LA] Name"` for names and a Lorem Ipsum paragraph for descriptions). This lets you verify the full request/cache/background-job flow without consuming AI quota.
+
 ### Deployment Strategy
 
 This project uses a dual-environment configuration (Staging and Production) defined in `azion.config.ts`. Azion resources automatically receive a `-staging` or `-prod` suffix based on the environment.

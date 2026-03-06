@@ -1,6 +1,6 @@
 {
   "name": "augmentedopen5e",
-  "bucket": "",
+  "bucket": "augmentedopen5e",
   "preset": "typescript",
   "env": "staging",
   "prefix": "20260305035421",

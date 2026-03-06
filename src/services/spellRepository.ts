@@ -73,8 +73,38 @@ export async function getSpellCatalog(locale: string): Promise<string[]> {
   return catalog ?? [];
 }
 
+// ---------------------------------------------------------------------------
+// Locales index — tracks every locale that has at least one cached spell
+// ---------------------------------------------------------------------------
+
+const LOCALES_INDEX_KEY = 'locales_index';
+
 /**
- * Adds a slug to the catalog for a given locale.
+ * Returns all locales that have at least one spell cached.
+ */
+export async function getActiveLocales(): Promise<string[]> {
+  const bucket = getSpellBucketName();
+  const locales = await getCacheItem<string[]>(bucket, LOCALES_INDEX_KEY);
+  return locales ?? [];
+}
+
+/**
+ * Records a locale in the global locales index.
+ * Idempotent: safe to call multiple times for the same locale.
+ */
+async function addLocaleToIndex(locale: string): Promise<void> {
+  const bucket = getSpellBucketName();
+  const existing = await getCacheItem<string[]>(bucket, LOCALES_INDEX_KEY);
+  const locales = existing ?? [];
+  if (!locales.includes(locale)) {
+    locales.push(locale);
+    await setCacheItem(bucket, LOCALES_INDEX_KEY, locales);
+  }
+}
+
+/**
+ * Adds a slug to the catalog for a given locale and ensures the locale
+ * is registered in the global locales index.
  * Idempotent: if the slug is already in the catalog, it won't be duplicated.
  */
 export async function addSlugToCatalog(locale: string, slug: string): Promise<void> {
@@ -86,6 +116,8 @@ export async function addSlugToCatalog(locale: string, slug: string): Promise<vo
     slugs.push(slug);
     await setCacheItem(bucket, key, slugs);
   }
+  // Keep the global locales index in sync
+  await addLocaleToIndex(locale);
 }
 
 // ---------------------------------------------------------------------------

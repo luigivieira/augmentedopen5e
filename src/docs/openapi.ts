@@ -27,14 +27,20 @@ export const openApiSpec = {
           {
             name: 'locale',
             in: 'query',
-            description: 'Target locale for translation (e.g. "en-us", "pt-br", "es")',
+            description:
+              'Target locale for the response. **Must follow the `language-region` format** (e.g. `en-us`, `pt-br`, `es-es`). ' +
+              'Single-language codes such as `pt` or `en` are not accepted.',
             required: true,
-            schema: { type: 'string' },
+            schema: {
+              type: 'string',
+              pattern: '^[a-z]{2}-[a-z]{2}$',
+              example: 'pt-br',
+            },
           },
         ],
         responses: {
           '200': {
-            description: 'Successful response with the spell data (currently only for en-us)',
+            description: 'Spell data returned from cache (for the exact requested locale).',
             content: {
               'application/json': {
                 schema: { type: 'object' },
@@ -43,10 +49,11 @@ export const openApiSpec = {
           },
           '202': {
             description:
-              'Accepted for translation. Dispatches background job and returns empty body.',
+              'Translation accepted. A background job has been dispatched (or is already running). ' +
+              'Retry the same request in a few seconds to receive the translated result.',
           },
           '400': {
-            description: 'Missing required parameters',
+            description: 'Missing or invalid parameters (e.g. locale not in `xx-xx` format).',
           },
         },
       },
@@ -66,7 +73,7 @@ export const openApiSpec = {
         ],
         responses: {
           '200': {
-            description: 'Successful response',
+            description: 'Successful response. Returns one entry per known locale.',
             content: {
               'application/json': {
                 schema: {
@@ -74,9 +81,8 @@ export const openApiSpec = {
                   items: {
                     type: 'object',
                     properties: {
-                      locale: { type: 'string', example: 'en-us' },
-                      total: { type: 'integer', example: 319 },
-                      cached: { type: 'integer', example: 319 },
+                      locale: { type: 'string', example: 'pt-br' },
+                      cached: { type: 'integer', example: 12 },
                       spells: {
                         type: 'array',
                         items: { type: 'string' },

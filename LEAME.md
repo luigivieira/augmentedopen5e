@@ -112,6 +112,18 @@ Puedes emular localmente el entorno de Azion Edge Functions para probar cambios 
 
    Esto abrirá automáticamente tu navegador en `http://localhost:3333/docs`, donde podrás visualizar la especificación y probar directamente los endpoints.
 
+#### Emulador Local — Notas de Comportamiento
+
+**Formato de locale:** El parámetro `locale` debe seguir siempre el formato `idioma-región` (`pt-br`, `en-us`, `es-es`). Códigos simples como `pt` o `en` son rechazados con HTTP 400.
+
+**KV Storage en disco:** Al ejecutar localmente, el emulador de Azion persiste los datos de KV en `.edge/storage/<nombre-del-bucket>/` dentro del directorio raíz del proyecto. Cada clave de caché se almacena como un archivo individual. Para reiniciar la caché local, borra los archivos de ese directorio:
+
+```bash
+rm .edge/storage/augmented_spells_kv-staging/*
+```
+
+**Mock de traducción con IA:** El emulador local **no** llama al endpoint real de inferencia de IA de Azion. En cambio, cuando la variable de entorno `MOCK_AI_LATENCY` está definida (lo que `pnpm emulate` hace automáticamente), las traducciones devuelven un texto de marcador de posición (`"[la-LA] Nombre"` para nombres y un párrafo de Lorem Ipsum para descripciones). Esto permite verificar todo el flujo de solicitudes, caché y trabajo en segundo plano sin consumir cuota de IA.
+
 ### Estrategia de Implementación (Deploy)
 
 Este proyecto usa una configuración de doble entorno (Staging y Producción) definida en `azion.config.ts`. Los recursos creados en Azion reciben automáticamente el sufijo `-staging` o `-prod`.

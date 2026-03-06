@@ -110,25 +110,19 @@ Você pode emular o ambiente do Azion Edge Functions localmente para testar alte
    pnpm open
    ```
 
-3. **Inicie o Emulador:**
-
-   Em um primeiro terminal, execute:
-
-   ```bash
-   pnpm emulate
-   ```
-
-   Este comando executa um servidor local que emula o ambiente de Edge (`azion dev`).
-
-4. **Abra a Documentação da API:**
-
-   Em um segundo terminal, execute:
-
-   ```bash
-   pnpm open
-   ```
-
    Isto abrirá automaticamente o seu navegador padrão em `http://localhost:3333/docs` de onde você poderá visualizar a especificação e testar os endpoints diretamente pela UI.
+
+#### Emulador Local — Observações de Comportamento
+
+**Formato de locale:** O parâmetro `locale` deve sempre seguir o formato `idioma-região` (`pt-br`, `en-us`, `es-es`). Códigos simples como `pt` ou `en` são rejeitados com HTTP 400.
+
+**KV Storage em disco:** Ao rodar localmente, o emulador da Azion persiste os dados de KV em `.edge/storage/<nome-do-bucket>/` dentro da raiz do projeto. Cada chave de cache é armazenada como um arquivo separado. Para resetar o cache local, basta apagar os arquivos desse diretório:
+
+```bash
+rm .edge/storage/augmented_spells_kv-staging/*
+```
+
+**Mock de tradução por IA:** O emulador local **não** chama o endpoint real de inferência de IA da Azion. Em vez disso, quando a variável de ambiente `MOCK_AI_LATENCY` está definida (o que o `pnpm emulate` faz automaticamente), as traduções retornam um texto de placeholder (`"[la-LA] Nome"` para nomes e um parágrafo de Lorem Ipsum para descrições). Isso permite verificar todo o fluxo de requisição, cache e job em background sem consumir cota de IA.
 
 ### Estratégia de Deploy
 
