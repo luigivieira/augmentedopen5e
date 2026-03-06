@@ -10,15 +10,15 @@ An open-source (MIT) REST API deployed on **[Azion Edge Functions](https://www.a
 
 It serves Dungeons & Dragons 5th Edition System Reference Document (SRD) content, automatically extending it with AI-powered translations into different languages using the **Groq API** (powered by [llama-3.3-70b-versatile](https://console.groq.com/docs/models)).
 
-> **Why Groq instead of Azion AI Inference?** This project is open source and runs on a free Azion account. At the time of this release, the free tier does not include access to [Azion AI Inference](https://www.azion.com/en/documentation/products/ai-inference/). In a paid setup, AI Inference would be a more direct and efficient choice — no external API dependency required. Groq was chosen as a practical alternative: it offers a generous free tier with fast inference and excellent multilingual support.
+> **Why Groq instead of Azion AI Inference?** This project is open source and runs on a free Azion account. At the time of this release, the free tier does not include access to [Azion AI Inference](https://www.azion.com/en/documentation/products/ai/ai-inference/). In a paid setup, AI Inference would be a more direct and efficient choice — no external API dependency required. Groq was chosen as a practical alternative: it offers a generous free tier with fast inference and excellent multilingual support.
 
-> **DISCLAIMER:** This project relies entirely on the open-source D&D 5e SRD, licensed under Creative Commons (CC-BY). **The translations provided by this API are strictly machine-generated (via AI/LLMs) on-the-fly and are NOT official translations.** This project is not affiliated with, endorsed by, or meant to reproduce the copyrighted translated works of Wizards of the Coast or any of its localized publishing partners.
+> **DISCLAIMER:** This project relies entirely on the open-source D&D 5e SRD, licensed under [Creative Commons Attribution 4.0 International (CC-BY 4.0)](https://creativecommons.org/licenses/by/4.0/). **The translations provided by this API are strictly machine-generated (via AI/LLMs) on-the-fly and are NOT official translations.** This project is not affiliated with, endorsed by, or meant to reproduce the copyrighted translated works of Wizards of the Coast or any of its localized publishing partners.
 
 ## Core Value & Use Case
 
 The primary goal of this API is **not** to replace the Open5e API, but to complement it. A client can use Open5e directly for search and pagination, and use this API strictly as a fast translation layer by slug.
 
-Translations are fast because they run at the edge and are cached globally — low latency is guaranteed after the first access.
+Translations are fast because they run at the edge and are cached globally — low latency is guaranteed after the first access. This includes the original English content: once a spell is fetched from Open5e for the first time, it is cached at the edge and reused for all subsequent translation requests for that spell, with no repeated calls to the upstream API.
 
 This project is also not meant to replace any existing official translations, but rather to serve as a community resource and as a demonstration of what can be built on the Azion Edge platform.
 
@@ -34,12 +34,32 @@ It is also worth noting that bulk translation is not supported. The edge computi
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/spells/:slug` | Returns a spell translated to the requested locale |
-| `GET` | `/api/spells` | Returns all slugs currently cached for a given locale |
+| `GET` | `/api/spell?slug=<slug>&locale=<locale>` | Returns a spell translated to the requested locale |
+| `GET` | `/api/spells?locale=<locale>` | Returns all slugs currently cached for a given locale |
 
 The `/api/spells` endpoint (no slug) is primarily intended for internal use and observability — it does not return spell data, only the list of slugs already cached for each locale.
 
 **Locale format:** The `locale` query parameter must always follow the `language-region` format (e.g. `pt-br`, `en-us`, `es-es`). Single codes like `pt` or `en` are rejected with HTTP 400.
+
+## How it Works
+
+Every request to `GET /api/spell` follows this flow:
+
+1. **Input validation** — `slug` and `locale` are both required. The locale format is also validated. Missing or malformed parameters return `400 Bad Request`.
+
+2. **Cache lookup** — The edge checks KV Storage for the `slug + locale` pair.
+   - **Cache hit** → `200 OK` with the translated spell. No external calls are made.
+
+3. **Cache miss** — The edge checks if the English (`en-us`) base content is already cached.
+   - **English not cached** → The full pipeline is triggered in the background: fetch the spell from Open5e, cache the English version, then translate and cache the target locale. Returns `202 Accepted` immediately.
+   - **English cached, target is `en-us`** → Returns `200 OK` directly.
+   - **English cached, target is another locale** → Only the translation step runs in the background. Returns `202 Accepted`.
+
+4. **Pending state** — If a background job is already running for that `slug + locale`, the request returns `202 Accepted` without triggering a duplicate job.
+
+5. **Client polling** — On `202`, the client should retry the same request after a short delay until `200` is returned.
+
+6. **Error responses** — `400` for invalid input; `500` for unexpected errors such as edge timeouts, which should not occur under normal conditions.
 
 ## Suggestions of Possible Improvements
 
@@ -170,11 +190,11 @@ Uses the Azion CLI to list and delete every object in the respective bucket. Use
 
 If you fork this repository, follow these steps before your first deployment:
 
-1. Create a Personal Token in your Azion console.
-2. In your GitHub repo, go to **Settings → Secrets and variables → Actions** and add a secret named `AZION_PERSONAL_TOKEN`.
-3. Get your own Groq API key at [console.groq.com](https://console.groq.com) and add it as `GROQ_API_KEY` in your Azion application's Edge Functions environment variables (Azion Console → Edge Functions → your function → Environment Variables).
-4. Run `pnpm reset` to generate new `azion.json` bootstrap files. Without this step, the CLI will attempt to update resources that don't exist in your account and fail.
-5. After your first successful deployment, **commit the updated `azion.json` files**. These files now contain the IDs of your newly created Azion resources. Without committing them, future deployments may fail with a resource conflict error.
+1. Get your own Groq API key at [console.groq.com](https://console.groq.com). Add it as `GROQ_API_KEY` in:
+   - A `.env.local` file at the project root (for local emulation).
+   - Your Azion application's Edge Functions environment variables (Azion Console → Edge Functions → your function → Environment Variables).
+2. Run `pnpm reset` to generate new `azion.json` bootstrap files. Without this step, the CLI will attempt to update resources that don't exist in your account and fail.
+3. After your first successful deployment, **commit the updated `azion.json` files**. These files now contain the IDs of your newly created Azion resources. Without committing them, future deployments may fail with a resource conflict error.
 
 ## License
 

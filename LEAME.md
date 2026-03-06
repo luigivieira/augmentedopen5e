@@ -10,15 +10,15 @@ Una API REST de código abierto (MIT) implementada en **[Azion Edge Functions](h
 
 Sirve contenido del System Reference Document (SRD) de Dungeons & Dragons 5ª Edición, extendiéndolo automáticamente con traducciones generadas por Inteligencia Artificial a diferentes idiomas usando la **API de Groq** (con el modelo [llama-3.3-70b-versatile](https://console.groq.com/docs/models)).
 
-> **¿Por qué Groq en lugar de Azion AI Inference?** Este proyecto es de código abierto y funciona con una cuenta gratuita de Azion. Al momento de este lanzamiento, el plan gratuito no incluye acceso a [Azion AI Inference](https://www.azion.com/es/documentacion/productos/ai-inference/). En un entorno de pago, AI Inference sería una opción más directa y eficiente — sin dependencia de una API externa. Groq fue elegido como alternativa práctica: ofrece un plan gratuito generoso con inferencia rápida y excelente soporte multilingüe.
+> **¿Por qué Groq en lugar de Azion AI Inference?** Este proyecto es de código abierto y funciona con una cuenta gratuita de Azion. Al momento de este lanzamiento, el plan gratuito no incluye acceso a [Azion AI Inference](https://www.azion.com/es/documentacion/productos/ai/ai-inference/). En un entorno de pago, AI Inference sería una opción más directa y eficiente — sin dependencia de una API externa. Groq fue elegido como alternativa práctica: ofrece un plan gratuito generoso con inferencia rápida y excelente soporte multilingüe.
 
-> **AVISO:** Este proyecto se basa enteramente en el SRD de D&D 5e, disponible bajo la licencia Creative Commons (CC-BY). **Las traducciones proporcionadas por esta API son estrictamente generadas por máquina (vía IA/LLMs) bajo demanda y NO SON traducciones oficiales.** Este proyecto no está afiliado, respaldado ni creado con la intención de reproducir las obras traducidas protegidas por derechos de autor de Wizards of the Coast o de cualquiera de sus socios locales de publicación.
+> **AVISO:** Este proyecto se basa enteramente en el SRD de D&D 5e, disponible bajo la licencia [Creative Commons Attribution 4.0 International (CC-BY 4.0)](https://creativecommons.org/licenses/by/4.0/). **Las traducciones proporcionadas por esta API son estrictamente generadas por máquina (vía IA/LLMs) bajo demanda y NO SON traducciones oficiales.** Este proyecto no está afiliado, respaldado ni creado con la intención de reproducir las obras traducidas protegidas por derechos de autor de Wizards of the Coast o de cualquiera de sus socios locales de publicación.
 
 ## Valor Real y Caso de Uso
 
 El objetivo principal de esta API **no es** reemplazar la API de Open5e, sino complementarla. Un cliente puede usar Open5e directamente para búsqueda y paginación, y usar esta API únicamente como una capa de traducción rápida por slug.
 
-Las traducciones son rápidas porque se ejecutan en el edge y se almacenan en caché globalmente — baja latencia garantizada después del primer acceso.
+Las traducciones son rápidas porque se ejecutan en el edge y se almacenan en caché globalmente — baja latencia garantizada después del primer acceso. Esto incluye el contenido original en inglés: una vez que un hechizo es obtenido de Open5e por primera vez, queda almacenado en caché en el edge y se reutiliza en todas las solicitudes de traducción posteriores para ese hechizo, sin llamadas repetidas a la API upstream.
 
 Este proyecto tampoco pretende reemplazar ninguna traducción oficial existente, sino servir como un recurso para la comunidad y como demostración de lo que se puede construir en la plataforma Azion Edge.
 
@@ -34,12 +34,32 @@ También vale mencionar que las traducciones en bloque (bulk) no están soportad
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| `GET` | `/api/spells/:slug` | Devuelve un hechizo traducido al locale solicitado |
-| `GET` | `/api/spells` | Devuelve todos los slugs actualmente en caché para un locale dado |
+| `GET` | `/api/spell?slug=<slug>&locale=<locale>` | Devuelve un hechizo traducido al locale solicitado |
+| `GET` | `/api/spells?locale=<locale>` | Devuelve todos los slugs actualmente en caché para un locale dado |
 
 El endpoint `/api/spells` (sin slug) está destinado principalmente al uso interno y la observabilidad — no devuelve datos de hechizos, sino solo la lista de slugs ya almacenados en caché para cada locale.
 
 **Formato del locale:** El parámetro de query `locale` debe seguir siempre el formato `idioma-región` (ej.: `pt-br`, `en-us`, `es-es`). Códigos simples como `pt` o `en` son rechazados con HTTP 400.
+
+## Cómo Funciona
+
+Cada solicitud a `GET /api/spell` sigue este flujo:
+
+1. **Validación de entrada** — `slug` y `locale` son obligatorios. El formato del locale también se valida. Parámetros ausentes o malformados devuelven `400 Bad Request`.
+
+2. **Consulta al caché** — El edge verifica KV Storage para el par `slug + locale`.
+   - **Cache hit** → `200 OK` con el hechizo traducido. No se realiza ninguna llamada externa.
+
+3. **Cache miss** — El edge verifica si el contenido base en inglés (`en-us`) ya está en caché.
+   - **Inglés no cacheado** → El pipeline completo se dispara en segundo plano: obtener el hechizo de Open5e, cachear la versión en inglés, traducir y cachear el locale destino. Devuelve `202 Accepted` de inmediato.
+   - **Inglés cacheado y locale destino es `en-us`** → Devuelve `200 OK` directamente.
+   - **Inglés cacheado y locale destino es otro** → Solo el paso de traducción se ejecuta en segundo plano. Devuelve `202 Accepted`.
+
+4. **Estado pendiente** — Si ya hay un job en segundo plano corriendo para ese `slug + locale`, la solicitud devuelve `202 Accepted` sin disparar un job duplicado.
+
+5. **Polling del cliente** — En `202`, el cliente debe reintentar la misma solicitud después de un breve intervalo hasta recibir `200`.
+
+6. **Respuestas de error** — `400` para entrada inválida; `500` para errores inesperados como timeouts en el edge, que no deberían ocurrir en condiciones normales.
 
 ## Sugerencias de Posibles Mejoras
 
@@ -170,11 +190,11 @@ Utiliza la CLI de Azion para listar y eliminar todos los objetos del bucket corr
 
 Si haces fork de este repositorio, sigue estos pasos antes de tu primer despliegue:
 
-1. Crea un Personal Token en tu consola de Azion.
-2. En tu repositorio de GitHub, ve a **Settings → Secrets and variables → Actions** y agrega un secret llamado `AZION_PERSONAL_TOKEN`.
-3. Obtén tu propia clave de API de Groq en [console.groq.com](https://console.groq.com) y agrégala como `GROQ_API_KEY` en las variables de entorno de tu Edge Function en Azion (Azion Console → Edge Functions → tu función → Environment Variables).
-4. Ejecuta `pnpm reset` para generar nuevos archivos `azion.json` de arranque. Sin este paso, el CLI intentará actualizar recursos que no existen en tu cuenta y fallará.
-5. Después de tu primer despliegue exitoso, **confirma los archivos `azion.json` actualizados**. Estos archivos ahora contienen los IDs de tus recursos de Azion recién creados. Sin confirmarlos, futuros despliegues pueden fallar con un error de conflicto de recursos.
+1. Obtén tu propia clave de API de Groq en [console.groq.com](https://console.groq.com). Agrégala como `GROQ_API_KEY` en:
+   - Un archivo `.env.local` en la raíz del proyecto (para emulación local).
+   - Las variables de entorno de tu Edge Function en Azion (Azion Console → Edge Functions → tu función → Environment Variables).
+2. Ejecuta `pnpm reset` para generar nuevos archivos `azion.json` de arranque. Sin este paso, el CLI intentará actualizar recursos que no existen en tu cuenta y fallará.
+3. Después de tu primer despliegue exitoso, **confirma los archivos `azion.json` actualizados**. Estos archivos ahora contienen los IDs de tus recursos de Azion recién creados. Sin confirmarlos, futuros despliegues pueden fallar con un error de conflicto de recursos.
 
 ## Licencia
 
