@@ -101,8 +101,8 @@ function getPendingKey(slug: string, locale: string): string {
  */
 export async function isPendingTranslation(slug: string, locale: string): Promise<boolean> {
   const bucket = getSpellBucketName();
-  const marker = await getCacheItem<{ pending: true }>(bucket, getPendingKey(slug, locale));
-  return marker !== null;
+  const marker = await getCacheItem<{ pending: boolean }>(bucket, getPendingKey(slug, locale));
+  return marker?.pending === true;
 }
 
 /**

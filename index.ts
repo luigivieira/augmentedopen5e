@@ -16,7 +16,7 @@ async function handleRequest(request: Request, event?: EdgeFetchEvent): Promise<
   const url = new URL(request.url);
 
   // Router
-  if (url.pathname === '/docs' || url.pathname === '/openapi.json') {
+  if (url.pathname === '/' || url.pathname === '/docs' || url.pathname === '/openapi.json') {
     return handleDocsRequest(request);
   }
 
@@ -29,13 +29,10 @@ async function handleRequest(request: Request, event?: EdgeFetchEvent): Promise<
   }
 
   // Not Found fallback
-  return new Response(
-    JSON.stringify({ error: 'Endpoint not found. Try /api/spell or /api/spells' }),
-    {
-      status: 404,
-      headers: { 'content-type': 'application/json' },
-    },
-  );
+  return new Response(JSON.stringify({ error: 'Endpoint not found. Try /' }), {
+    status: 404,
+    headers: { 'content-type': 'application/json' },
+  });
 }
 
 if (typeof addEventListener !== 'undefined') {

@@ -13,6 +13,7 @@ import {
   markTranslationPending,
   saveCachedSpell,
 } from '../services/spellRepository';
+import { isValidLocale } from '../utils/locale';
 
 export async function handleSpellRequest(
   request: Request,
@@ -37,11 +38,10 @@ export async function handleSpellRequest(
     });
   }
 
-  const localeRegex = /^[a-z]{2}-[a-z]{2}$/i;
-  if (!localeRegex.test(locale)) {
+  if (!isValidLocale(locale)) {
     return new Response(
       JSON.stringify({
-        error: 'Invalid locale format. Expected format: language-country (e.g., en-us, pt-br)',
+        error: `Invalid locale format: '${locale}'. Expected format: language-country (e.g., en-us, pt-br). 'us-en' is not a valid ISO sequence.`,
       }),
       {
         status: 400,
@@ -51,11 +51,13 @@ export async function handleSpellRequest(
   }
 
   const targetLocale = locale.toLowerCase();
+  console.log(`[API] Request for spell: '${slug}' in locale: '${targetLocale}'`);
 
   try {
     // 1. Check KV Cache first
     const cachedSpell = await getCachedSpell(slug, targetLocale);
     if (cachedSpell) {
+      console.log(`[API] Cache HIT for '${slug}' (${targetLocale})`);
       return new Response(JSON.stringify(cachedSpell), {
         status: 200,
         headers: {
@@ -66,8 +68,9 @@ export async function handleSpellRequest(
     }
 
     // 2. Cache MISS for targetLocale: Get base en-us spell
-    // This will check if en-us is in cache first, otherwise fetch from Open5e API and cache it.
+    console.log(`[API] Cache MISS for '${slug}' (${targetLocale}). Fetching base 'en-us' data...`);
     const data = await getBaseSpell(slug, event);
+    console.log(`[API] Base data for '${slug}' retrieved successfully.`);
 
     if (targetLocale === 'en-us') {
       return new Response(JSON.stringify(data), {
@@ -80,9 +83,13 @@ export async function handleSpellRequest(
     }
 
     // 3. Target is NOT en-us: Check if translation is already running
+    console.log(
+      `[API] Target locale is '${targetLocale}'. Checking if translation is already pending...`,
+    );
     const alreadyPending = await isPendingTranslation(slug, targetLocale);
 
     if (alreadyPending) {
+      console.log(`[API] Translation for '${slug}' (${targetLocale}) is ALREADY pending.`);
       return new Response(
         JSON.stringify({
           message:
@@ -98,16 +105,26 @@ export async function handleSpellRequest(
 
     // 4. No background job yet — start one
     const runTranslationAndCache = async () => {
+      console.log(`[Background] Starting translation worker for '${slug}' (${targetLocale})...`);
       try {
         await markTranslationPending(slug, targetLocale);
         const translatedData = await translateSpellFields(data, targetLocale);
+        console.log(
+          `[Background] Translation successful for '${slug}' (${targetLocale}). Saving to cache...`,
+        );
         await saveCachedSpell(slug, translatedData);
+        console.log(`[Background] Cache updated for '${slug}' (${targetLocale}).`);
       } catch (err) {
-        console.error(`Background translation failed for ${slug} to ${targetLocale}:`, err);
+        console.error(`[Background] Translation CRASHED for ${slug} to ${targetLocale}:`, err);
       } finally {
         await clearPendingTranslation(slug, targetLocale);
+        console.log(
+          `[Background] Worker finished and pending flag cleared for '${slug}' (${targetLocale}).`,
+        );
       }
     };
+
+    console.log(`[API] Triggering background translation for '${slug}' (${targetLocale})...`);
 
     if (event?.waitUntil) {
       event.waitUntil(runTranslationAndCache());

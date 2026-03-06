@@ -26,8 +26,18 @@ declare global {
       }>;
     };
     Storage: {
-      get(bucket: string, key: string): Promise<{ body: ReadableStream | string | null } | null>;
-      put(bucket: string, key: string, value: string): Promise<void>;
+      new (bucket: string): {
+        get(key: string): Promise<{
+          arrayBuffer(): Promise<ArrayBuffer>;
+          body?: ReadableStream | string | null;
+          text?(): Promise<string>;
+        } | null>;
+        put(
+          key: string,
+          value: string | Uint8Array | Blob | ReadableStream,
+          options?: { [key: string]: string },
+        ): Promise<void>;
+      };
     };
     env?: {
       get(key: string): string | undefined;
