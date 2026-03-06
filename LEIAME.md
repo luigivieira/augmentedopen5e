@@ -164,6 +164,17 @@ pnpm deploy:prod
 
 Faz o build e o deploy no namespace `augmentedopen5e-prod`. Ele utiliza os IDs commitados no repositório para garantir que sempre atualize a aplicação correta.
 
+#### 4. Limpeza do Cache Remoto
+
+Para apagar todos os objetos cacheados do bucket do Azion Edge Storage sem precisar fazer um novo deploy:
+
+```bash
+pnpm delete:cache:staging
+pnpm delete:cache:prod
+```
+
+Esses comandos utilizam o Azion CLI (autenticado via `azion login`) para listar e apagar todos os objetos do bucket correspondente. Útil quando é preciso invalidar traduções em cache que estão desatualizadas.
+
 > **Importante para Forks:**
 >
 > 1. Crie um Personal Token no seu console da Azion.

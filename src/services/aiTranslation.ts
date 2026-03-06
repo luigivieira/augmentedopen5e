@@ -8,6 +8,11 @@ export interface SpellData {
   duration?: string;
   casting_time?: string;
   school?: string;
+  range?: string;
+  level?: string;
+  dnd_class?: string;
+  spell_lists?: unknown;
+  archetype?: string;
   [key: string]: unknown;
 }
 
@@ -40,6 +45,11 @@ export async function translateSpellFields(
     duration: originalSpell.duration,
     casting_time: originalSpell.casting_time,
     school: originalSpell.school,
+    range: originalSpell.range,
+    level: originalSpell.level,
+    dnd_class: originalSpell.dnd_class,
+    spell_lists: originalSpell.spell_lists,
+    archetype: originalSpell.archetype,
   };
 
   const systemPrompt = `You are a strict technical translator for the Dungeons & Dragons 5th Edition tabletop role-playing game rules.

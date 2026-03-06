@@ -13,6 +13,8 @@
     "build:staging": "AZION_ENV=staging azion build --config-dir azion/staging",
     "build:prod": "AZION_ENV=production azion build --config-dir azion/production",
     "reset": "node scripts/reset-azion-state.js",
+    "delete:cache:staging": "node scripts/reset-cache.js staging",
+    "delete:cache:prod": "node scripts/reset-cache.js production",
     "deploy:staging": "pnpm build:staging && AZION_ENV=staging azion deploy --local --config-dir azion/staging --skip-build -y",
     "deploy:prod": "pnpm build:prod && AZION_ENV=production azion deploy --local --config-dir azion/production --skip-build -y"
   },

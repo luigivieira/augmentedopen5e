@@ -164,6 +164,17 @@ pnpm deploy:prod
 
 Builds and deploys the production edge function under the `augmentedopen5e-prod` namespace. It uses the IDs committed in the repository to ensure it always updates the correct application.
 
+#### 4. Clearing the Remote Cache
+
+To delete all cached objects from the Azion Edge Storage bucket without redeploying, use:
+
+```bash
+pnpm delete:cache:staging
+pnpm delete:cache:prod
+```
+
+These commands use the Azion CLI (authenticated via `azion login`) to list and delete every object in the respective bucket. Useful when you need to invalidate stale or outdated cached translations.
+
 > **Important for Forks:**
 >
 > 1. Create a Personal Token in your Azion console.
