@@ -6,64 +6,51 @@
   <a href="LEAME.md"><img src="https://flagcdn.com/w40/es.png" alt="Español" width="22" style="opacity: 0.5;"></a>
 </p>
 
-Uma API REST open-source (Licença MIT) deployada no **Azion Edge Functions** que atua como uma camada de "aumento" (augmentation) sobre a [API pública do Open5e](https://api.open5e.com/) para traduções automáticas feitas por IA.
+Uma API REST open-source (MIT) deployada no **Azion Edge Functions** que atua como uma camada de "aumento" (augmentation) sobre a [API pública do Open5e](https://api.open5e.com/) para traduções automáticas via IA.
 
-Ela serve conteúdo do System Reference Document (SRD) de Dungeons & Dragons 5ª Edição e o estende automaticamente com traduções geradas por Inteligência Artificial usando a **API do Groq** (com o modelo [llama-3.3-70b-versatile](https://console.groq.com/docs/models)) para diferentes idiomas.
+Ela serve conteúdo do System Reference Document (SRD) de Dungeons & Dragons 5ª Edição, estendendo-o automaticamente com traduções geradas por Inteligência Artificial para diferentes idiomas usando a **API do Groq** (com o modelo [llama-3.3-70b-versatile](https://console.groq.com/docs/models)).
 
-> **Por que Groq em vez do Azion AI Inference?** O Azion AI Inference possui limitações de uso significativas mesmo nos planos pagos, o que o torna inadequado para um projeto como este. O Groq oferece um plano gratuito generoso com inferência rápida e excelente suporte multilingual.
+> **Por que Groq em vez do Azion AI Inference?** Este projeto é open-source e roda em uma conta gratuita da Azion. No momento deste release, o plano gratuito não inclui acesso ao [Azion AI Inference](https://www.azion.com/pt-br/documentacao/produtos/ai-inference/). Em um setup pago, o AI Inference seria uma escolha mais direta e eficiente — sem dependência de API externa. O Groq foi escolhido como alternativa prática: oferece um plano gratuito generoso com inferência rápida e excelente suporte multilingual.
 
-> **⚠️ AVISO — Sobre Direitos Autorais:** Este projeto baseia-se inteiramente no SRD (System Reference Document) de D&D 5e, que é disponibilizado sob licença Creative Commons (CC-BY). **As traduções fornecidas por esta API são estritamente geradas por máquina (via IA/LLMs) sob demanda e NÃO SÃO traduções oficiais.** Este projeto não é afiliado, endossado ou criado com o intuito de reproduzir as obras traduzidas protegidas por direitos autorais da Wizards of the Coast ou de qualquer um de seus parceiros locais de publicação.
+> **AVISO:** Este projeto baseia-se inteiramente no SRD de D&D 5e, disponibilizado sob licença Creative Commons (CC-BY). **As traduções fornecidas por esta API são estritamente geradas por máquina (via IA/LLMs) sob demanda e NÃO SÃO traduções oficiais.** Este projeto não é afiliado, endossado nem criado com o intuito de reproduzir as obras traduzidas protegidas por direitos autorais da Wizards of the Coast ou de qualquer um de seus parceiros locais de publicação.
 
 ## Valor Real e Caso de Uso
 
-O principal caso de uso desta API **não é** substituir a API do Open5e, mas sim complementá-la. Um cliente (aplicação) pode perfeitamente usar o Open5e diretamente para processos de busca (search) e paginação (que é um caso de uso distinto, com sua própria UX), e utilizar esta API apenas como uma camada de tradução rápida através do `slug`.
+O principal objetivo desta API **não é** substituir a API do Open5e, mas complementá-la. Um cliente pode usar o Open5e diretamente para busca e paginação, e usar esta API apenas como uma camada de tradução rápida pelo slug.
 
-As traduções serão incrivelmente rápidas justamente porque rodam no edge e são cacheadas globalmente — garantindo baixa latência após o primeiro acesso.
+As traduções são rápidas porque rodam no edge e são cacheadas globalmente — baixa latência garantida após o primeiro acesso.
 
-**Exemplo Concreto:** Uma UI de grimório ou ficha de personagem que exibe magias traduzidas automaticamente para o idioma do usuário. O cliente busca a magia na Open5e, pega o slug, e chama esta API para obter a tradução — sem precisar gerenciar nenhuma infraestrutura de tradução própria.
+Este projeto também não tem como objetivo substituir quaisquer traduções oficiais existentes, mas sim servir como um recurso para a comunidade e uma demonstração do que pode ser construído na plataforma Azion Edge.
 
-## Limitações Atuais
+**Exemplo Concreto:** Uma UI de grimório digital ou ficha de personagem que exibe magias traduzidas automaticamente. O cliente busca a magia no Open5e, extrai o slug e chama esta API para obter a tradução — sem precisar gerenciar nenhuma infraestrutura de tradução própria.
 
-Atualmente, a API suporta apenas a **busca individual de magias por slug**. Quaisquer endpoints relacionados a search (busca aberta), paginação ou operações em bulk (massa) não existem e não são suportados.
+## Escopo e Decisões de Design
 
-**Por quê?** O modelo de edge computing (executado em V8 isolates) possui limites rígidos de tempo de execução e não é adequado para processamento em massa de longa duração ou grandes orquestrações. Essas operações pertencem a um cloud worker tradicional consumindo uma fila de mensagens, não ao edge.
+Esta API suporta intencionalmente apenas a busca individual de magias por slug. A API do Open5e já lida muito bem com busca e paginação — um cliente que tem o slug de uma magia pode usar esta API puramente como camada de tradução, solicitando o conteúdo para um determinado locale sem nenhuma infraestrutura adicional.
 
-## Arquitetura e Roadmap
+Vale mencionar também que traduções em bulk não são suportadas. O modelo de edge computing (V8 isolates com limites rígidos de tempo de execução) não foi projetado para processamento de longa duração em massa; essas operações pertencem a um cloud worker tradicional consumindo uma fila de mensagens.
 
-A arquitetura planejada para a próxima iteração do projeto separa claramente a entrega rápida do processamento pesado:
+## Endpoints
 
-1. **A Edge Function** serve os resultados cacheados e retorna o status `202 Accepted` para conteúdos que ainda não foram traduzidos.
-2. **Um Cloud Worker** (ex: Cloud Run, Lambda) consome uma fila de mensagens (ex: SQS, Pub/Sub) e processa as traduções em bulk de forma assíncrona.
-3. **O Edge SQL** permanece como um cache de leitura rápida no "hot path" (caminho crítico de latência).
+| Método | Caminho | Descrição |
+|--------|---------|-----------|
+| `GET` | `/api/spells/:slug` | Retorna uma magia traduzida para o locale solicitado |
+| `GET` | `/api/spells` | Retorna todos os slugs atualmente em cache para um dado locale |
 
-Essa separação respeita o ponto forte do edge (servir conteúdo com latência ultrabaixa) sem abusar da plataforma para workloads para os quais ela não foi projetada.
+O endpoint `/api/spells` (sem slug) é voltado principalmente para uso interno e observabilidade — ele não retorna dados de magias, apenas a lista de slugs já cacheados para cada locale.
 
-Além disso, o endpoint de descoberta `GET /api/spells?locale=<locale>` poderá, no futuro (como uma possibilidade ou contribuição da comunidade), disparar automaticamente o job de tradução em background quando um locale for consultado sem nenhuma magia em cache — tornando-o o ponto de entrada natural para iniciar o "aquecimento do cache" (cache warming) de um novo idioma.
+**Formato do locale:** O parâmetro de query `locale` deve sempre seguir o formato `idioma-região` (ex.: `pt-br`, `en-us`, `es-es`). Códigos simples como `pt` ou `en` são rejeitados com HTTP 400.
+
+## Sugestões de Possíveis Melhorias
+
+A arquitetura atual serve bem os resultados cacheados, mas há próximos passos naturais caso o projeto evolua:
+
+- Um **Cloud Worker** (ex.: Cloud Run, Lambda) consumindo uma fila de mensagens para processar traduções em bulk de forma assíncrona, fora das restrições do edge.
+- O endpoint `/api/spells` poderia disparar automaticamente um job de tradução em background quando um locale for solicitado pela primeira vez, tornando-o o ponto de entrada natural para aquecer o cache de um novo idioma.
 
 ## Desenvolvimento
 
-Este projeto utiliza o [pnpm](https://pnpm.io/) como gerenciador de pacotes. Caso não o possua, é possível instalá-lo globalmente via `npm install -g pnpm`.
-
-Além disso, para fazer o deploy e gerenciar este projeto, é estritamente necessário ter a [Azion CLI](https://www.azion.com/pt-br/documentacao/produtos/azion-cli/visao-geral/) instalada e autenticada.
-Para instalar o CLI oficial da Azion:
-
-**Para macOS/Linux**:
-
-```bash
-curl -fsSL https://cli.azion.app/install.sh | bash
-```
-
-**Para Windows (via Winget)**:
-
-```bash
-winget install aziontech.azion
-```
-
-Após a instalação, faça o login na sua conta:
-
-```bash
-azion login
-```
+Este projeto utiliza o [pnpm](https://pnpm.io/) como gerenciador de pacotes. Caso não esteja instalado, instale-o globalmente via `npm install -g pnpm`.
 
 ### Configuração
 
@@ -73,18 +60,38 @@ Instalar dependências:
 pnpm install
 ```
 
-Formatação e Linter:
+Formatação e Lint:
 
 ```bash
 pnpm format
 pnpm lint
 ```
 
+Para fazer o deploy e gerenciar este projeto também é necessário ter a [Azion CLI](https://www.azion.com/pt-br/documentacao/produtos/azion-cli/visao-geral/) instalada. Instale-a para a sua plataforma:
+
+**macOS/Linux:**
+
+```bash
+curl -fsSL https://cli.azion.app/install.sh | bash
+```
+
+**Windows (via Winget):**
+
+```bash
+winget install aziontech.azion
+```
+
+Em seguida, autentique-se com sua conta Azion:
+
+```bash
+azion login
+```
+
 ### Desenvolvimento e Testes
 
-#### Testes Unitários (Unit Tests)
+#### Testes Unitários
 
-Utilizamos Vitest para os testes unitários. Para executar a suite de testes:
+Utilizamos Vitest para os testes unitários:
 
 ```bash
 pnpm test
@@ -92,45 +99,31 @@ pnpm test
 
 #### Emulação Local e Documentação
 
-Você pode emular o ambiente do Azion Edge Functions localmente para testar alterações através de uma interface interativa Scalar antes de fazer o deploy.
+Você pode emular o ambiente do Azion Edge Functions localmente antes de fazer o deploy.
 
-1. **Inicie o Emulador:**
-
-   Em um primeiro terminal, execute:
+1. **Inicie o Emulador** — em um primeiro terminal:
 
    ```bash
    pnpm emulate
    ```
 
-   Este comando executa um servidor local que emula o ambiente de Edge (`azion dev`).
-
-2. **Abra a Documentação da API:**
-
-   Em um segundo terminal, execute:
-
-   ```bash
-   pnpm open
-   ```
-
-   Isto abrirá automaticamente o seu navegador padrão em `http://localhost:3333/docs` de onde você poderá visualizar a especificação e testar os endpoints diretamente pela UI.
+2. **Abra o servidor local** no navegador em `http://localhost:3333`. A página inicial traz detalhes do projeto, links para a documentação interativa da API (Scalar UI) e acesso rápido para testar os endpoints diretamente.
 
 #### Emulador Local — Observações de Comportamento
 
-**Formato de locale:** O parâmetro `locale` deve sempre seguir o formato `idioma-região` (`pt-br`, `en-us`, `es-es`). Códigos simples como `pt` ou `en` são rejeitados com HTTP 400.
-
-**KV Storage em disco:** Ao rodar localmente, o emulador da Azion persiste os dados de KV em `.edge/storage/<nome-do-bucket>/` dentro da raiz do projeto. Cada chave de cache é armazenada como um arquivo separado. Para resetar o cache local, basta apagar os arquivos desse diretório:
+**KV Storage em disco:** Ao rodar localmente, o emulador da Azion persiste os dados de KV em `.edge/storage/<nome-do-bucket>/` na raiz do projeto. Para resetar o cache local, pare o emulador, apague os arquivos desse diretório e reinicie:
 
 ```bash
 rm .edge/storage/augmented_spells_kv-staging/*
 ```
 
-**Chave da API do Groq:** O emulador local chama a **API real do Groq**. Antes de executar o `pnpm emulate`, crie um arquivo `.env.local` na raiz do projeto com sua chave de API do Groq:
+**Chave da API do Groq:** O emulador local chama a **API real do Groq**. Crie um arquivo `.env.local` na raiz do projeto antes de executar `pnpm emulate`:
 
 ```env
 GROQ_API_KEY=sua_chave_aqui
 ```
 
-Esse arquivo já está listado no `.gitignore`. Você pode obter uma chave gratuita em [console.groq.com](https://console.groq.com).
+Esse arquivo já está listado no `.gitignore`. Obtenha uma chave gratuita em [console.groq.com](https://console.groq.com).
 
 ### Estratégia de Deploy
 
@@ -140,49 +133,55 @@ Os arquivos de estado `azion.json` (em `azion/staging/` e `azion/production/`) *
 
 #### 1. Configuração para Novos Colaboradores
 
-Caso tenha acabado de clonar o repositório e precise autorizar seus próprios recursos de aplicação na Azion, execute o comando de reset:
+Após clonar o repositório, execute o comando de reset para gerar os arquivos `azion.json` iniciais para sua própria conta Azion:
 
 ```bash
 pnpm reset
 ```
 
-Isto gera os arquivos `azion.json` básicos. Seu primeiro `pnpm deploy` criará os recursos e atualizará estes arquivos com os novos IDs.
+Seu primeiro `pnpm deploy` criará os recursos e atualizará esses arquivos com os novos IDs.
 
-#### 2. Deploy de Staging (local)
+#### 2. Deploy de Staging
 
 ```bash
 pnpm deploy:staging
 ```
 
-Faz o build e o deploy da edge function no namespace `augmentedopen5e-staging`. Na primeira execução (após o `pnpm reset`), o CLI cria os recursos; nas subsequentes, ele os atualiza utilizando os IDs armazenados no `azion.json`.
+Faz o build e o deploy no namespace `augmentedopen5e-staging`. Na primeira execução, o CLI cria os recursos; nas subsequentes, os atualiza usando os IDs commitados.
 
-#### 3. Deploy de Produção (local ou GitHub Actions)
+#### 3. Deploy de Produção
 
 ```bash
 pnpm deploy:prod
 ```
 
-Faz o build e o deploy no namespace `augmentedopen5e-prod`. Ele utiliza os IDs commitados no repositório para garantir que sempre atualize a aplicação correta.
+Faz o build e o deploy no namespace `augmentedopen5e-prod`. **Observação:** Na maioria dos casos, isso é feito automaticamente pelo GitHub Actions a cada push na branch `main` — o deploy manual de produção geralmente não é necessário.
 
 #### 4. Limpeza do Cache Remoto
-
-Para apagar todos os objetos cacheados do bucket do Azion Edge Storage sem precisar fazer um novo deploy:
 
 ```bash
 pnpm delete:cache:staging
 pnpm delete:cache:prod
 ```
 
-Esses comandos utilizam o Azion CLI (autenticado via `azion login`) para listar e apagar todos os objetos do bucket correspondente. Útil quando é preciso invalidar traduções em cache que estão desatualizadas.
+Utiliza o Azion CLI para listar e apagar todos os objetos do bucket correspondente. Útil para invalidar traduções em cache que estejam desatualizadas.
 
-> **Importante para Forks:**
->
-> 1. Crie um Personal Token no seu console da Azion.
-> 2. No seu repositório GitHub, acesse **Settings → Secrets and variables → Actions** e adicione um secret chamado `AZION_PERSONAL_TOKEN` com o valor do token.
-> 3. Obtenha sua própria chave de API do Groq em [console.groq.com](https://console.groq.com) e configure-a como a variável de ambiente `GROQ_API_KEY` nas configurações de Edge Functions da sua aplicação na Azion (Azion Console → Edge Functions → sua função → Environment Variables).
+### Fazendo Fork deste Projeto
+
+Se você fizer um fork deste repositório, siga estes passos antes do seu primeiro deploy:
+
+1. Crie um Personal Token no seu console da Azion.
+2. No seu repositório GitHub, acesse **Settings → Secrets and variables → Actions** e adicione um secret chamado `AZION_PERSONAL_TOKEN`.
+3. Obtenha sua própria chave da API do Groq em [console.groq.com](https://console.groq.com) e adicione-a como `GROQ_API_KEY` nas variáveis de ambiente da sua Edge Function na Azion (Azion Console → Edge Functions → sua função → Environment Variables).
+4. Execute `pnpm reset` para gerar novos arquivos `azion.json` iniciais. Sem este passo, o CLI tentará atualizar recursos que não existem na sua conta e falhará.
+5. Após o primeiro deploy bem-sucedido, **commite os arquivos `azion.json` atualizados**. Esses arquivos passam a conter os IDs dos recursos Azion recém-criados. Sem commitá-los, deploys futuros podem falhar com erro de conflito de recursos.
 
 ## Licença
 
-O código-fonte desta API é licenciado sob a **Licença MIT**.
+O código-fonte é licenciado sob a **Licença MIT**.
 
-O conteúdo servido por esta API (incluindo as traduções geradas por IA) é derivado do SRD da 5ª Edição e é licenciado sob a licença **Creative Commons Attribution 4.0 International (CC-BY 4.0)**, acompanhando a licença da API do Open5e.
+O conteúdo servido por esta API (incluindo as traduções geradas por IA) é derivado do SRD da 5ª Edição e é licenciado sob **Creative Commons Attribution 4.0 International (CC-BY 4.0)**, acompanhando a licença da API do Open5e.
+
+---
+
+*Criado com carinho e cuidado por Luiz Carlos Vieira para toda a comunidade.* ❤️
