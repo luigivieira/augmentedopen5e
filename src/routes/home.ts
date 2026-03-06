@@ -453,9 +453,9 @@ const I18N = {
     clearBtn: 'Clear',
     resultsTitle: 'Results',
     loadingText: 'Fetching...',
-    pendingNew: 'This spell was not in the cache yet — translation has been kicked off in the background. Try again in a moment.',
-    pendingInProgress: 'Translation is still running in the background. Please try again shortly.',
-    retryBtn: 'Retry',
+    pendingNew: 'Translation has been requested and is running in the background. Check back in a moment.',
+    pendingInProgress: 'Translation is still in progress in the background. Check back shortly.',
+    retryBtn: 'Check progress',
     errorText: 'Error',
     latencyLabel: 'Latency',
     timestampLabel: 'Requested at',
@@ -512,9 +512,9 @@ const I18N = {
     clearBtn: 'Limpar',
     resultsTitle: 'Resultados',
     loadingText: 'Buscando...',
-    pendingNew: 'Esta magia não estava no cache — a tradução foi iniciada em background. Tente novamente em instantes.',
-    pendingInProgress: 'A tradução ainda está sendo executada em background. Tente novamente em breve.',
-    retryBtn: 'Tentar novamente',
+    pendingNew: 'A tradução foi requisitada e está sendo processada em background. Verifique o progresso em instantes.',
+    pendingInProgress: 'A tradução ainda está em progresso em background. Verifique novamente em breve.',
+    retryBtn: 'Verificar progresso',
     errorText: 'Erro',
     latencyLabel: 'Latência',
     timestampLabel: 'Solicitado em',
@@ -571,9 +571,9 @@ const I18N = {
     clearBtn: 'Limpiar',
     resultsTitle: 'Resultados',
     loadingText: 'Buscando...',
-    pendingNew: 'Este hechizo no estaba en el caché — la traducción se ha iniciado en segundo plano. Inténtalo de nuevo en un momento.',
-    pendingInProgress: 'La traducción todavía se está ejecutando en segundo plano. Por favor, inténtalo de nuevo en breve.',
-    retryBtn: 'Reintentar',
+    pendingNew: 'La traducción ha sido solicitada y se está procesando en segundo plano. Verifica el progreso en un momento.',
+    pendingInProgress: 'La traducción todavía está en progreso en segundo plano. Vuelve a verificar en breve.',
+    retryBtn: 'Verificar progreso',
     errorText: 'Error',
     latencyLabel: 'Latencia',
     timestampLabel: 'Solicitado a las',
@@ -926,7 +926,7 @@ export const HOME_HTML = `<!DOCTYPE html>
     /* ── Pending card ── */
     .pending-card {
       background: var(--surface);
-      border: 1px solid var(--warning);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 1rem 1.25rem;
       display: flex;
@@ -936,12 +936,12 @@ export const HOME_HTML = `<!DOCTYPE html>
       flex-wrap: wrap;
     }
 
-    .pending-msg { font-size: 0.88rem; color: var(--warning); }
+    .pending-msg { font-size: 0.88rem; color: var(--text-muted); }
 
     .retry-btn {
       background: var(--surface2);
-      color: var(--warning);
-      border: 1px solid var(--warning);
+      color: var(--accent);
+      border: 1px solid var(--accent);
       border-radius: 6px;
       padding: 0.35rem 0.9rem;
       font-size: 0.82rem;
