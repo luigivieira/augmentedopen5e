@@ -10,6 +10,8 @@ Una API REST de código abierto (MIT) implementada en **[Azion Edge Functions](h
 
 Sirve contenido del System Reference Document (SRD) de Dungeons & Dragons 5ª Edición, extendiéndolo automáticamente con traducciones generadas por Inteligencia Artificial a diferentes idiomas usando la **API de Groq** (con el modelo [llama-3.3-70b-versatile](https://console.groq.com/docs/models)).
 
+**Demo en vivo:** El despliegue público de este fork puede probarse en https://bjnblqczuty.map.azionedge.net/
+
 > **¿Por qué Groq en lugar de Azion AI Inference?** Este proyecto es de código abierto y funciona con una cuenta gratuita de Azion. Al momento de este lanzamiento, el plan gratuito no incluye acceso a [Azion AI Inference](https://www.azion.com/es/documentacion/productos/ai/ai-inference/). En un entorno de pago, AI Inference sería una opción más directa y eficiente — sin dependencia de una API externa. Groq fue elegido como alternativa práctica: ofrece un plan gratuito generoso con inferencia rápida y excelente soporte multilingüe.
 
 > **AVISO:** Este proyecto se basa enteramente en el SRD de D&D 5e, disponible bajo la licencia [Creative Commons Attribution 4.0 International (CC-BY 4.0)](https://creativecommons.org/licenses/by/4.0/). **Las traducciones proporcionadas por esta API son estrictamente generadas por máquina (vía IA/LLMs) bajo demanda y NO SON traducciones oficiales.** Este proyecto no está afiliado, respaldado ni creado con la intención de reproducir las obras traducidas protegidas por derechos de autor de Wizards of the Coast o de cualquiera de sus socios locales de publicación.
@@ -19,6 +21,10 @@ Sirve contenido del System Reference Document (SRD) de Dungeons & Dragons 5ª Ed
 El objetivo principal de esta API **no es** reemplazar la API de Open5e, sino complementarla. Un cliente puede usar Open5e directamente para búsqueda y paginación, y usar esta API únicamente como una capa de traducción rápida por slug.
 
 Las traducciones son rápidas porque se ejecutan en el edge y se almacenan en caché globalmente — baja latencia garantizada después del primer acceso. Esto incluye el contenido original en inglés: una vez que un hechizo es obtenido de Open5e por primera vez, queda almacenado en caché en el edge y se reutiliza en todas las solicitudes de traducción posteriores para ese hechizo, sin llamadas repetidas a la API upstream.
+
+Esta baja latencia global puede verificarse con herramientas como [KeyCDN Performance Test](https://tools.keycdn.com/performance?url=https://bjnblqczuty.map.azionedge.net/api/spell?slug=fireball&locale=pt-br):
+
+![Resultados del test de performance global de esta API](docs/performance-test.png)
 
 Este proyecto tampoco pretende reemplazar ninguna traducción oficial existente, sino servir como un recurso para la comunidad y como demostración de lo que se puede construir en la plataforma Azion Edge.
 

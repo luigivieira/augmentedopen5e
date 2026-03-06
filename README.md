@@ -10,6 +10,8 @@ An open-source (MIT) REST API deployed on **[Azion Edge Functions](https://www.a
 
 It serves Dungeons & Dragons 5th Edition System Reference Document (SRD) content, automatically extending it with AI-powered translations into different languages using the **Groq API** (powered by [llama-3.3-70b-versatile](https://console.groq.com/docs/models)).
 
+**Live Demo:** The public deployment of this fork can be tested at https://bjnblqczuty.map.azionedge.net/
+
 > **Why Groq instead of Azion AI Inference?** This project is open source and runs on a free Azion account. At the time of this release, the free tier does not include access to [Azion AI Inference](https://www.azion.com/en/documentation/products/ai/ai-inference/). In a paid setup, AI Inference would be a more direct and efficient choice — no external API dependency required. Groq was chosen as a practical alternative: it offers a generous free tier with fast inference and excellent multilingual support.
 
 > **DISCLAIMER:** This project relies entirely on the open-source D&D 5e SRD, licensed under [Creative Commons Attribution 4.0 International (CC-BY 4.0)](https://creativecommons.org/licenses/by/4.0/). **The translations provided by this API are strictly machine-generated (via AI/LLMs) on-the-fly and are NOT official translations.** This project is not affiliated with, endorsed by, or meant to reproduce the copyrighted translated works of Wizards of the Coast or any of its localized publishing partners.
@@ -19,6 +21,10 @@ It serves Dungeons & Dragons 5th Edition System Reference Document (SRD) content
 The primary goal of this API is **not** to replace the Open5e API, but to complement it. A client can use Open5e directly for search and pagination, and use this API strictly as a fast translation layer by slug.
 
 Translations are fast because they run at the edge and are cached globally — low latency is guaranteed after the first access. This includes the original English content: once a spell is fetched from Open5e for the first time, it is cached at the edge and reused for all subsequent translation requests for that spell, with no repeated calls to the upstream API.
+
+This global low latency can be verified with tools like [KeyCDN Performance Test](https://tools.keycdn.com/performance?url=https://bjnblqczuty.map.azionedge.net/api/spell?slug=fireball&locale=pt-br):
+
+![Global performance test results for this API](docs/performance-test.png)
 
 This project is also not meant to replace any existing official translations, but rather to serve as a community resource and as a demonstration of what can be built on the Azion Edge platform.
 

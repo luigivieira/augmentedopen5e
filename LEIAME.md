@@ -10,6 +10,8 @@ Uma API REST open-source (MIT) deployada no **[Azion Edge Functions](https://www
 
 Ela serve conteúdo do System Reference Document (SRD) de Dungeons & Dragons 5ª Edição, estendendo-o automaticamente com traduções geradas por Inteligência Artificial para diferentes idiomas usando a **API do Groq** (com o modelo [llama-3.3-70b-versatile](https://console.groq.com/docs/models)).
 
+**Demo ao vivo:** O deploy público deste fork pode ser testado em https://bjnblqczuty.map.azionedge.net/
+
 > **Por que Groq em vez do Azion AI Inference?** Este projeto é open-source e roda em uma conta gratuita da Azion. No momento deste release, o plano gratuito não inclui acesso ao [Azion AI Inference](https://www.azion.com/pt-br/documentacao/produtos/ai/ai-inference/). Em um setup pago, o AI Inference seria uma escolha mais direta e eficiente — sem dependência de API externa. O Groq foi escolhido como alternativa prática: oferece um plano gratuito generoso com inferência rápida e excelente suporte multilingual.
 
 > **AVISO:** Este projeto baseia-se inteiramente no SRD de D&D 5e, disponibilizado sob licença [Creative Commons Attribution 4.0 International (CC-BY 4.0)](https://creativecommons.org/licenses/by/4.0/). **As traduções fornecidas por esta API são estritamente geradas por máquina (via IA/LLMs) sob demanda e NÃO SÃO traduções oficiais.** Este projeto não é afiliado, endossado nem criado com o intuito de reproduzir as obras traduzidas protegidas por direitos autorais da Wizards of the Coast ou de qualquer um de seus parceiros locais de publicação.
@@ -19,6 +21,10 @@ Ela serve conteúdo do System Reference Document (SRD) de Dungeons & Dragons 5ª
 O principal objetivo desta API **não é** substituir a API do Open5e, mas complementá-la. Um cliente pode usar o Open5e diretamente para busca e paginação, e usar esta API apenas como uma camada de tradução rápida pelo slug.
 
 As traduções são rápidas porque rodam no edge e são cacheadas globalmente — baixa latência garantida após o primeiro acesso. Isso inclui o conteúdo original em inglês: assim que uma magia é buscada no Open5e pela primeira vez, ela é cacheada no edge e reutilizada em todas as requisições de tradução subsequentes para aquela magia, sem chamadas repetidas à API upstream.
+
+Essa baixa latência global pode ser verificada com ferramentas como o [KeyCDN Performance Test](https://tools.keycdn.com/performance?url=https://bjnblqczuty.map.azionedge.net/api/spell?slug=fireball&locale=pt-br):
+
+![Resultados do teste de performance global desta API](docs/performance-test.png)
 
 Este projeto também não tem como objetivo substituir quaisquer traduções oficiais existentes, mas sim servir como um recurso para a comunidade e uma demonstração do que pode ser construído na plataforma Azion Edge.
 
