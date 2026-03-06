@@ -80,10 +80,12 @@ Respond ONLY with the translated JSON object. Absolutely no conversational text 
   // ------------------
 
   try {
-    // We are assuming Llama-3-8B-Instruct is available in Azion.
-    // If we need a different default model, it can be swapped here.
-    console.log(`[AI] Running real AI Inference with model 'Llama-3-8B-Instruct'...`);
-    const result = await Azion.AI.run('Llama-3-8B-Instruct', {
+    // Using Qwen3 30B Instruct FP8 — best available model for multilingual tasks on Azion AI Inference.
+    // Supports 256K context and explicitly designed for multilingual text generation.
+    // See: https://www.azion.com/pt-br/documentacao/produtos/ai/ai-inference/modelos/qwen3-30ba3b/
+    const MODEL_ID = 'qwen-qwen3-30b-a3b-instruct-2507-fp8';
+    console.log(`[AI] Running real AI Inference with model '${MODEL_ID}'...`);
+    const result = await Azion.AI.run(MODEL_ID, {
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },

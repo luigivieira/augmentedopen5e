@@ -8,7 +8,7 @@
 
 An open-source (MIT) REST API deployed on **Azion Edge Functions** that acts as an augmentation layer over the public [Open5e API](https://api.open5e.com/) for automatic translations from AI.
 
-It serves Dungeons & Dragons 5th Edition System Reference Document (SRD) content, while automatically extending it with AI-powered translations into different languages using Hugging Face LLMs.
+It serves Dungeons & Dragons 5th Edition System Reference Document (SRD) content, while automatically extending it with AI-powered translations into different languages using **Azion AI Inference** (powered by [Qwen3 30B A3B Instruct](https://www.azion.com/pt-br/documentacao/produtos/ai/ai-inference/modelos/qwen3-30ba3b/)).
 
 > **⚠️ CAUTION — Copyright Notice:** This project relies entirely on the open-source D&D 5e SRD (System Reference Document), which is licensed under Creative Commons (CC-BY). **The translations provided by this API are strictly machine-generated (via AI/LLMs) on-the-fly and are NOT official translations.** This project is not affiliated with, endorsed by, or meant to reproduce the copyrighted translated works of Wizards of the Coast or any of its localized publishing partners.
 

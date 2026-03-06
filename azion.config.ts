@@ -6,14 +6,10 @@ const envName = isStaging ? 'augmentedopen5e-staging' : 'augmentedopen5e-prod';
 export default defineConfig({
   storage: [
     {
-      name: 'augmented_spells_kv-staging',
-      dir: 'augmented_spells_kv-staging',
+      name: `${envName}-bucket`,
+      dir: `${envName}-bucket`,
       prefix: '',
-    },
-    {
-      name: 'augmented_spells_kv-prod',
-      dir: 'augmented_spells_kv-prod',
-      prefix: '',
+      workloadsAccess: 'read_write' as const,
     },
   ],
   build: {

@@ -19,7 +19,8 @@ export function getSpellBucketName(): string {
     }
   }
 
-  return `augmented_spells_kv-${env === 'production' ? 'prod' : 'staging'}`;
+  const envName = env === 'production' ? 'augmentedopen5e-prod' : 'augmentedopen5e-staging';
+  return `${envName}-bucket`;
 }
 
 /**
