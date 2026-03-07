@@ -73,7 +73,7 @@ export async function handleSpellRequest(
   if (!isValidLocale(locale)) {
     return new Response(
       JSON.stringify({
-        error: `Invalid locale format: '${locale}'. Expected format: language-country (e.g., en-us, pt-br). 'us-en' is not a valid ISO sequence.`,
+        error: `Invalid locale format: '${locale}'. Expected format: language-country (e.g., en-us, pt-br).`,
       }),
       {
         status: 400,
