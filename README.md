@@ -129,6 +129,18 @@ We use Vitest for unit testing:
 pnpm test
 ```
 
+To generate a coverage report (outputs to `coverage/` and prints a summary in the terminal):
+
+```bash
+pnpm coverage
+```
+
+To open the interactive coverage UI in the browser:
+
+```bash
+pnpm coverage:ui
+```
+
 #### Local Emulation & Documentation
 
 You can emulate the Azion Edge Functions environment locally before deploying.

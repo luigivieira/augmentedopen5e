@@ -5,10 +5,16 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
+    silent: true,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      exclude: ['test/mocks/**'],
+      include: ['src/**/*.ts'],
+      exclude: [
+        'src/**/*.test.ts',
+        'src/**/*.d.ts',
+        'src/types/**',
+      ],
     },
   },
   resolve: {
