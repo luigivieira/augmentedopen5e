@@ -53,23 +53,25 @@ Cada requisição ao `GET /api/spell` segue este fluxo:
 
 1. **Validação de entrada** — `slug` e `locale` são obrigatórios. O formato do locale também é validado. Parâmetros ausentes ou inválidos retornam `400 Bad Request`.
 
-2. **Consulta ao cache** — O edge verifica o KV Storage para o par `slug + locale`.
+2. **Validação do slug** — O edge consulta um índice KV com todos os slugs de magias válidos do Open5e. Se o slug não estiver na lista, retorna `404 Not Found` imediatamente. Na primeira requisição (cold start), esse índice é buscado de forma síncrona no Open5e e então cacheado — todas as requisições seguintes utilizam a cópia local sem chamada externa.
+
+3. **Consulta ao cache** — O edge verifica o KV Storage para o par `slug + locale`.
    - **Cache hit** → `200 OK` com a magia traduzida. Nenhuma chamada externa é feita.
 
-3. **Cache miss** — O edge verifica se o conteúdo base em inglês (`en-us`) já está cacheado.
+4. **Cache miss** — O edge verifica se o conteúdo base em inglês (`en-us`) já está cacheado.
    - **Inglês não cacheado** → O pipeline completo é disparado em background: buscar a magia no Open5e, cachear a versão em inglês, traduzir e cachear o locale alvo. Retorna `202 Accepted` imediatamente.
    - **Inglês cacheado e locale alvo é `en-us`** → Retorna `200 OK` diretamente.
    - **Inglês cacheado e locale alvo é outro** → Apenas a etapa de tradução roda em background. Retorna `202 Accepted`.
 
-4. **Estado pendente** — Se um job em background já está rodando para aquele `slug + locale`, a requisição retorna `202 Accepted` sem disparar um job duplicado.
+5. **Estado pendente** — Se um job em background já está rodando para aquele `slug + locale`, a requisição retorna `202 Accepted` sem disparar um job duplicado.
 
-5. **Polling pelo cliente** — Em `202`, o corpo da resposta contém um campo `progress` indicando o estado do job em background:
+6. **Polling pelo cliente** — Em `202`, o corpo da resposta contém um campo `progress` indicando o estado do job em background:
    - `"started"` — um novo job foi disparado para esta requisição.
    - `"in-progress"` — um job já estava rodando quando a requisição chegou.
 
    Clientes **devem usar o campo `progress`** para determinar o que exibir. O campo `message` é apenas informativo e pode mudar sem aviso prévio. Tente a mesma requisição novamente após um breve intervalo até receber `200`.
 
-6. **Respostas de erro** — `400` para entrada inválida; `500` para erros inesperados como timeouts no edge, que não devem ocorrer em condições normais.
+7. **Respostas de erro** — `400` para entrada inválida; `404` para slugs desconhecidos; `500` para erros inesperados como timeouts no edge, que não devem ocorrer em condições normais.
 
 ## Sugestões de Possíveis Melhorias
 

@@ -11,6 +11,7 @@ import {
   isPendingTranslation,
   markTranslationPending,
   saveCachedSpell,
+  validateSlug,
 } from '../services/spellRepository';
 import { isValidLocale } from '../utils/locale';
 
@@ -85,7 +86,16 @@ export async function handleSpellRequest(
   console.log(`[API] Request for spell: '${slug}' in locale: '${targetLocale}'`);
 
   try {
-    // 1. Check KV cache for the requested locale
+    // 1. Validate slug against the cached Open5e spell list (fetched on first miss).
+    const isValid = await validateSlug(slug);
+    if (!isValid) {
+      return new Response(JSON.stringify({ error: `Spell not found: '${slug}'` }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 2. Check KV cache for the requested locale
     const cachedSpell = await getCachedSpell(slug, targetLocale);
     if (cachedSpell) {
       console.log(`[API] Cache HIT for '${slug}' (${targetLocale})`);
@@ -100,7 +110,7 @@ export async function handleSpellRequest(
 
     console.log(`[API] Cache MISS for '${slug}' (${targetLocale}).`);
 
-    // 2. Check if the en-us base spell is already cached
+    // 3. Check if the en-us base spell is already cached
     const cachedEn = await getCachedSpell(slug, 'en-us');
 
     if (!cachedEn) {
@@ -145,7 +155,7 @@ export async function handleSpellRequest(
       return kickedOff202(slug, targetLocale);
     }
 
-    // 3. en-us IS cached. If that's the target, return it directly.
+    // 4. en-us IS cached. If that's the target, return it directly.
     if (targetLocale === 'en-us') {
       return new Response(JSON.stringify(cachedEn), {
         status: 200,
@@ -153,7 +163,7 @@ export async function handleSpellRequest(
       });
     }
 
-    // 4. Need to translate. Check if already in progress.
+    // 5. Need to translate. Check if already in progress.
     const alreadyPending = await isPendingTranslation(slug, targetLocale);
     if (alreadyPending) {
       console.log(`[API] Translation for '${slug}' (${targetLocale}) is ALREADY pending.`);

@@ -160,6 +160,55 @@ export async function clearPendingTranslation(slug: string, locale: string): Pro
   await setCacheItem(bucket, getPendingKey(slug, locale), { pending: false });
 }
 
+// ---------------------------------------------------------------------------
+// Valid slug index — caches the full list of known Open5e spell slugs
+// ---------------------------------------------------------------------------
+
+const VALID_SLUGS_KEY = 'valid_slugs_index';
+
+interface Open5eSlugListResponse {
+  next: string | null;
+  results: { slug: string }[];
+}
+
+async function fetchAllSlugsFromOpen5e(): Promise<string[]> {
+  const slugs: string[] = [];
+  let url: string | null = 'https://api.open5e.com/spells/?fields=slug&limit=5000';
+
+  while (url) {
+    const response = await fetch(url, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch slug list from Open5e: ${response.status}`);
+    }
+    const data = (await response.json()) as Open5eSlugListResponse;
+    slugs.push(...data.results.map((r) => r.slug));
+    url = data.next ?? null;
+  }
+
+  return slugs;
+}
+
+/**
+ * Returns true if the given slug exists in the Open5e spell list.
+ * On first call (cache miss), synchronously fetches and caches the full slug
+ * list from Open5e. All subsequent calls use the KV cache and are instant.
+ */
+export async function validateSlug(slug: string): Promise<boolean> {
+  const bucket = getSpellBucketName();
+  const cached = await getCacheItem<string[]>(bucket, VALID_SLUGS_KEY);
+  if (cached) {
+    return cached.includes(slug);
+  }
+
+  // Cache miss: fetch all slugs from Open5e and cache the list for future requests.
+  const allSlugs = await fetchAllSlugsFromOpen5e();
+  await setCacheItem(bucket, VALID_SLUGS_KEY, allSlugs);
+  return allSlugs.includes(slug);
+}
+
 /**
  * Fetches the base spell (en-us).
  * Prioritizes the KV Cache for the en-us locale.

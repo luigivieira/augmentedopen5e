@@ -53,23 +53,25 @@ Every request to `GET /api/spell` follows this flow:
 
 1. **Input validation** — `slug` and `locale` are both required. The locale format is also validated. Missing or malformed parameters return `400 Bad Request`.
 
-2. **Cache lookup** — The edge checks KV Storage for the `slug + locale` pair.
+2. **Slug validation** — The edge checks a KV-cached index of all valid Open5e spell slugs. If the slug is not in the list, `404 Not Found` is returned immediately. On the very first request (cold start), this index is fetched synchronously from Open5e and then cached — all subsequent requests use the local copy with no external call.
+
+3. **Cache lookup** — The edge checks KV Storage for the `slug + locale` pair.
    - **Cache hit** → `200 OK` with the translated spell. No external calls are made.
 
-3. **Cache miss** — The edge checks if the English (`en-us`) base content is already cached.
+4. **Cache miss** — The edge checks if the English (`en-us`) base content is already cached.
    - **English not cached** → The full pipeline is triggered in the background: fetch the spell from Open5e, cache the English version, then translate and cache the target locale. Returns `202 Accepted` immediately.
    - **English cached, target is `en-us`** → Returns `200 OK` directly.
    - **English cached, target is another locale** → Only the translation step runs in the background. Returns `202 Accepted`.
 
-4. **Pending state** — If a background job is already running for that `slug + locale`, the request returns `202 Accepted` without triggering a duplicate job.
+5. **Pending state** — If a background job is already running for that `slug + locale`, the request returns `202 Accepted` without triggering a duplicate job.
 
-5. **Client polling** — On `202`, the response body contains a `progress` field indicating the state of the background job:
+6. **Client polling** — On `202`, the response body contains a `progress` field indicating the state of the background job:
    - `"started"` — a new job was just dispatched for this request.
    - `"in-progress"` — a job was already running when the request arrived.
 
    Clients **must use the `progress` field** to determine what to display. The `message` field is informational only and may change without notice. Retry the same request after a short delay until `200` is returned.
 
-6. **Error responses** — `400` for invalid input; `500` for unexpected errors such as edge timeouts, which should not occur under normal conditions.
+7. **Error responses** — `400` for invalid input; `404` for unknown slugs; `500` for unexpected errors such as edge timeouts, which should not occur under normal conditions.
 
 ## Suggestions of Possible Improvements
 

@@ -83,6 +83,9 @@ export const openApiSpec = {
           '400': {
             description: 'Missing or invalid parameters (e.g. locale not in `xx-xx` format).',
           },
+          '404': {
+            description: 'The requested slug does not exist in the Open5e spell list.',
+          },
         },
       },
     },
