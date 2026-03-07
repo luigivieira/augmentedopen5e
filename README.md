@@ -73,6 +73,27 @@ Every request to `GET /api/spell` follows this flow:
 
 7. **Error responses** — `400` for invalid input; `404` for unknown slugs; `500` for unexpected errors such as edge timeouts, which should not occur under normal conditions.
 
+### Cache Storage Structure
+
+All cached data is stored in **Azion KV Storage** (Edge KV) in a single bucket per environment:
+
+| Environment | Bucket Name |
+|-------------|-------------|
+| Staging | `augmentedopen5e-staging-bucket` |
+| Production | `augmentedopen5e-prod-bucket` |
+
+Within each bucket, the following key patterns are used:
+
+| Key Pattern | Value Schema | Description |
+|-------------|--------------|-------------|
+| `spell_{slug}_{locale}` | `SpellData & { locale: string }` | Translated spell data for a specific slug and locale |
+| `catalog_{locale}` | `string[]` | List of all slugs already cached for a given locale |
+| `locales_index` | `string[]` | List of all locales that have at least one cached spell |
+| `pending_{slug}_{locale}` | `{ pending: boolean }` | In-flight translation marker to prevent duplicate background jobs |
+| `valid_slugs_index` | `string[]` | Full list of valid Open5e spell slugs, fetched once on cold start |
+
+All values are serialized as JSON and stored as UTF-8 encoded bytes. Locally, the emulator persists KV data to `.edge/storage/<bucket-name>/` in the project root.
+
 ## Suggestions of Possible Improvements
 
 The current architecture serves cached results well, but there are natural next steps if the project evolves:
