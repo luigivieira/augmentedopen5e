@@ -1,9 +1,3 @@
-const LOCALE_NAMES: Record<string, string> = {
-  'en-us': 'English (en-us)',
-  'pt-br': 'Português Brasileiro (pt-br)',
-  'es-es': 'Español (es-es)',
-};
-
 const LOCALES: { code: string; label: string }[] = [
   { code: 'af-za', label: 'Afrikaans (South Africa)' },
   { code: 'ar-ae', label: 'Arabic (UAE)' },
@@ -1045,7 +1039,19 @@ export const HOME_HTML = `<!DOCTYPE html>
   // ── i18n data ──
   const I18N = ${JSON.stringify(I18N)};
 
-  const LOCALE_NAMES = ${JSON.stringify(LOCALE_NAMES)};
+  function getLocaleName(locale) {
+    try {
+      const displayLocales = [currentLang, navigator.language, 'en'];
+      const langNames = new Intl.DisplayNames(displayLocales, { type: 'language' });
+      const regionNames = new Intl.DisplayNames(displayLocales, { type: 'region' });
+      const [lang, region] = locale.split('-');
+      const langName = langNames.of(lang);
+      const regionName = regionNames.of(region.toUpperCase());
+      return \`\${langName} - \${regionName} (\${locale.toUpperCase()})\`;
+    } catch {
+      return locale.toUpperCase();
+    }
+  }
 
   let currentLang = 'en-us';
 
@@ -1081,6 +1087,11 @@ export const HOME_HTML = `<!DOCTYPE html>
     document.querySelectorAll('[data-i18n-key]').forEach(el => {
       const key = el.dataset.i18nKey;
       el.textContent = t[key] + ':';
+    });
+
+    // Re-render locale badges on existing cards
+    document.querySelectorAll('[data-locale]').forEach(el => {
+      el.textContent = getLocaleName(el.dataset.locale);
     });
   }
 
@@ -1143,7 +1154,7 @@ export const HOME_HTML = `<!DOCTYPE html>
 
   // ── Card builders ──
   function buildSpellCard(spell, latencyMs, edgeNode, t) {
-    const localeName = LOCALE_NAMES[spell.locale] || spell.locale;
+    const localeName = getLocaleName(spell.locale);
     const now = new Date();
     const timestamp = now.toLocaleTimeString() + ', ' + now.toLocaleDateString();
 
@@ -1175,7 +1186,7 @@ export const HOME_HTML = `<!DOCTYPE html>
     return \`
       <div class="spell-card">
         <div class="spell-card-header">
-          <div class="spell-locale-badge">\${escHtml(localeName)}</div>
+          <div class="spell-locale-badge" data-locale="\${escHtml(spell.locale)}">\${escHtml(localeName)}</div>
           <div class="spell-meta">
             <span>&#x23F1; <span data-i18n-key="latencyLabel">\${t.latencyLabel}:</span> \${latencyMs}ms</span>
             <span>&#x1F552; <span data-i18n-key="timestampLabel">\${t.timestampLabel}:</span> \${escHtml(timestamp)}</span>
