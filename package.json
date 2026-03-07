@@ -7,7 +7,8 @@
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint . --fix",
-    "test": "vitest",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "coverage:ui": "vitest --coverage --ui",
     "emulate": "dotenv -e .env.local -- azion dev",

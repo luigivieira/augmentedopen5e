@@ -1,16 +1,15 @@
-name: Deploy to Azion (Production)
+name: CI
 
 on:
-  workflow_run:
-    workflows: ['CI']
-    types: [completed]
+  push:
+    branches: ['**']
+  pull_request:
     branches: [main]
 
 jobs:
-  deploy:
+  test:
+    name: Tests & Coverage
     runs-on: ubuntu-latest
-    name: Deploy API to Azion Edge
-    if: github.event.workflow_run.conclusion == 'success'
 
     steps:
       - name: Checkout Repository
@@ -29,8 +28,7 @@ jobs:
 
       - name: Get pnpm store directory
         shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
       - name: Setup pnpm cache
         uses: actions/cache@v4
@@ -43,11 +41,8 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Azion CLI
-        run: curl -fsSL https://cli.azion.app/install.sh | bash
+      - name: Run Tests
+        run: pnpm test
 
-      - name: Authenticate Azion CLI
-        run: azion login --token ${{ secrets.AZION_PERSONAL_TOKEN }} --yes --silent || true
-
-      - name: Deploy to Production
-        run: pnpm run deploy:prod
+      - name: Check Coverage (≥ 90%)
+        run: pnpm coverage

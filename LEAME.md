@@ -169,6 +169,19 @@ GROQ_API_KEY=tu_clave_aqui
 
 Este archivo ya está incluido en `.gitignore`. Obtén una clave gratuita en [console.groq.com](https://console.groq.com).
 
+### Pipeline de CI/CD (GitHub Actions)
+
+Dos workflows están configurados en `.github/workflows/`:
+
+| Workflow | Archivo | Disparador |
+|----------|---------|------------|
+| **CI** | `ci.yml` | Cada push (todas las ramas) y PRs con destino a `main` |
+| **Deploy** | `deploy.yml` | Tras el éxito del CI en `main` |
+
+El workflow de **CI** ejecuta las pruebas unitarias (`pnpm test`) y luego verifica que la cobertura alcance el umbral mínimo del **90%** en statements, branches, functions y lines (`pnpm coverage`). Si alguno de los dos pasos falla, el CI falla y el despliegue queda bloqueado.
+
+El workflow de **Deploy** utiliza `workflow_run` para dispararse únicamente después de que el workflow de CI concluya **exitosamente** en `main`. Esto garantiza que ningún código llega a producción sin pasar las pruebas y la verificación de cobertura. Los pushes directos a `main` sin que el CI haya pasado no activarán el despliegue.
+
 ### Estrategia de Implementación (Deploy)
 
 Este proyecto usa una configuración de doble entorno (Staging y Producción) definida en `azion.config.ts`. Los recursos creados en Azion reciben automáticamente el sufijo `-staging` o `-prod`.
