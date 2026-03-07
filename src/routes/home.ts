@@ -930,7 +930,18 @@ export const HOME_HTML = `<!DOCTYPE html>
       flex-wrap: wrap;
     }
 
+    .pending-body { flex: 1; min-width: 0; }
     .pending-msg { font-size: 0.88rem; color: var(--text-muted); }
+
+    .card-request-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem 1rem;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 0.45rem;
+      opacity: 0.75;
+    }
 
     .retry-btn {
       background: var(--surface2);
@@ -1083,10 +1094,16 @@ export const HOME_HTML = `<!DOCTYPE html>
       el.textContent = t.fieldsLabels[field] || field;
     });
 
-    // Re-translate latency/timestamp labels on existing cards
+    // Re-translate labels with colon (latency, timestamp, spell, locale) on existing cards
     document.querySelectorAll('[data-i18n-key]').forEach(el => {
       const key = el.dataset.i18nKey;
       el.textContent = t[key] + ':';
+    });
+
+    // Re-translate plain text (pending message, retry button, error prefix) on existing cards
+    document.querySelectorAll('[data-i18n-text]').forEach(el => {
+      const key = el.dataset.i18nText;
+      el.textContent = t[key];
     });
 
     // Re-render locale badges on existing cards
@@ -1122,18 +1139,23 @@ export const HOME_HTML = `<!DOCTYPE html>
       const edgeNode = res.headers.get('X-Edge-Location') || null;
       const data = await res.json();
       const t = I18N[currentLang];
+      const now = new Date();
+      const timestamp = now.toLocaleTimeString() + ', ' + now.toLocaleDateString();
 
       if (res.status === 202) {
-        prependCard(buildPendingCard(slug, locale, t, data.progress === 'in-progress'));
+        prependCard(buildPendingCard(slug, locale, t, data.progress === 'in-progress', latencyMs, timestamp));
       } else if (!res.ok) {
-        prependCard(buildErrorCard(data.error || JSON.stringify(data), t));
+        prependCard(buildErrorCard(data.error || JSON.stringify(data), t, slug, locale, latencyMs, timestamp));
       } else {
         prependCard(buildSpellCard(data, latencyMs, edgeNode, t));
       }
 
       showResultsSection();
     } catch (err) {
-      prependCard(buildErrorCard(err.message, I18N[currentLang]));
+      const latencyMs = Math.round(performance.now() - t0);
+      const now = new Date();
+      const timestamp = now.toLocaleTimeString() + ', ' + now.toLocaleDateString();
+      prependCard(buildErrorCard(err.message, I18N[currentLang], slug, locale, latencyMs, timestamp));
       showResultsSection();
     } finally {
       btn.disabled = false;
@@ -1201,19 +1223,38 @@ export const HOME_HTML = `<!DOCTYPE html>
       </div>\`;
   }
 
-  function buildPendingCard(slug, locale, t, isRetry) {
-    const safeSlug = encodeURIComponent(slug);
-    const safeLocale = encodeURIComponent(locale);
-    const msg = isRetry ? t.pendingInProgress : t.pendingNew;
-    return \`
-      <div class="pending-card">
-        <div class="pending-msg">\${escHtml(msg)}</div>
-        <button class="retry-btn" onclick="retryFetch('\${safeSlug}', '\${safeLocale}', this)">\${t.retryBtn}</button>
+  function buildRequestMeta(slug, locale, latencyMs, timestamp, t) {
+    const latencyHtml = latencyMs !== null
+      ? \`<span>&#x23F1; <span data-i18n-key="latencyLabel">\${escHtml(t.latencyLabel)}:</span> \${latencyMs}ms</span>\`
+      : '';
+    const tsHtml = timestamp
+      ? \`<span>&#x1F552; <span data-i18n-key="timestampLabel">\${escHtml(t.timestampLabel)}:</span> \${escHtml(timestamp)}</span>\`
+      : '';
+    return \`<div class="card-request-meta">
+        <span><span data-i18n-key="spellLabel">\${escHtml(t.spellLabel)}:</span> \${escHtml(slug)}</span>
+        <span><span data-i18n-key="localeLabel">\${escHtml(t.localeLabel)}:</span> \${escHtml(locale)}</span>
+        \${latencyHtml}
+        \${tsHtml}
       </div>\`;
   }
 
-  function buildErrorCard(msg, t) {
-    return \`<div class="error-card">\${escHtml(t.errorText)}: \${escHtml(msg)}</div>\`;
+  function buildPendingCard(slug, locale, t, isRetry, latencyMs, timestamp) {
+    const safeSlug = encodeURIComponent(slug);
+    const safeLocale = encodeURIComponent(locale);
+    const msgKey = isRetry ? 'pendingInProgress' : 'pendingNew';
+    return \`
+      <div class="pending-card">
+        <div class="pending-body">
+          <div class="pending-msg" data-i18n-text="\${msgKey}">\${escHtml(t[msgKey])}</div>
+          \${buildRequestMeta(slug, locale, latencyMs, timestamp, t)}
+        </div>
+        <button class="retry-btn" data-i18n-text="retryBtn" onclick="retryFetch('\${safeSlug}', '\${safeLocale}', this)">\${t.retryBtn}</button>
+      </div>\`;
+  }
+
+  function buildErrorCard(msg, t, slug, locale, latencyMs, timestamp) {
+    const meta = slug ? buildRequestMeta(slug, locale, latencyMs, timestamp, t) : '';
+    return \`<div class="error-card"><div><span data-i18n-text="errorText">\${escHtml(t.errorText)}</span>: \${escHtml(msg)}</div>\${meta}</div>\`;
   }
 
   async function retryFetch(slug, locale, btn) {
@@ -1228,12 +1269,16 @@ export const HOME_HTML = `<!DOCTYPE html>
       const latencyMs = Math.round(performance.now() - t0);
       const edgeNode = res.headers.get('X-Edge-Location') || null;
       const data = await res.json();
+      const now = new Date();
+      const timestamp = now.toLocaleTimeString() + ', ' + now.toLocaleDateString();
+      const dSlug = decodeURIComponent(slug);
+      const dLocale = decodeURIComponent(locale);
 
       let newHtml;
       if (res.status === 202) {
-        newHtml = buildPendingCard(decodeURIComponent(slug), decodeURIComponent(locale), t, data.progress === 'in-progress');
+        newHtml = buildPendingCard(dSlug, dLocale, t, data.progress === 'in-progress', latencyMs, timestamp);
       } else if (!res.ok) {
-        newHtml = buildErrorCard(data.error || JSON.stringify(data), t);
+        newHtml = buildErrorCard(data.error || JSON.stringify(data), t, dSlug, dLocale, latencyMs, timestamp);
       } else {
         newHtml = buildSpellCard(data, latencyMs, edgeNode, t);
       }
@@ -1242,8 +1287,11 @@ export const HOME_HTML = `<!DOCTYPE html>
       wrapper.innerHTML = newHtml;
       card.replaceWith(wrapper.firstElementChild);
     } catch (err) {
+      const latencyMs = Math.round(performance.now() - t0);
+      const now = new Date();
+      const timestamp = now.toLocaleTimeString() + ', ' + now.toLocaleDateString();
       const d = document.createElement('div');
-      d.innerHTML = buildErrorCard(err.message, t);
+      d.innerHTML = buildErrorCard(err.message, t, decodeURIComponent(slug), decodeURIComponent(locale), latencyMs, timestamp);
       card.replaceWith(d.firstElementChild);
     }
   }
