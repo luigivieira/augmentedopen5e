@@ -25,6 +25,7 @@ function schedule(event: EdgeFetchEvent | undefined, fn: () => Promise<void>): v
 function pending202(slug: string, locale: string): Response {
   return new Response(
     JSON.stringify({
+      progress: 'in-progress',
       message:
         `The translation of the contents for ${slug} (${locale}) has not completed yet, ` +
         'we apologise. Please try again in a few moments.',
@@ -36,6 +37,7 @@ function pending202(slug: string, locale: string): Response {
 function kickedOff202(slug: string, locale: string): Response {
   return new Response(
     JSON.stringify({
+      progress: 'started',
       message:
         `The contents for ${slug} (${locale}) was missing, and it is being translated ` +
         'in the background now. Please try again in a few moments.',

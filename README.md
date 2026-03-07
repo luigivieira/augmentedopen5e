@@ -63,7 +63,11 @@ Every request to `GET /api/spell` follows this flow:
 
 4. **Pending state** — If a background job is already running for that `slug + locale`, the request returns `202 Accepted` without triggering a duplicate job.
 
-5. **Client polling** — On `202`, the client should retry the same request after a short delay until `200` is returned.
+5. **Client polling** — On `202`, the response body contains a `progress` field indicating the state of the background job:
+   - `"started"` — a new job was just dispatched for this request.
+   - `"in-progress"` — a job was already running when the request arrived.
+
+   Clients **must use the `progress` field** to determine what to display. The `message` field is informational only and may change without notice. Retry the same request after a short delay until `200` is returned.
 
 6. **Error responses** — `400` for invalid input; `500` for unexpected errors such as edge timeouts, which should not occur under normal conditions.
 

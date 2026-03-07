@@ -63,7 +63,11 @@ Cada requisição ao `GET /api/spell` segue este fluxo:
 
 4. **Estado pendente** — Se um job em background já está rodando para aquele `slug + locale`, a requisição retorna `202 Accepted` sem disparar um job duplicado.
 
-5. **Polling pelo cliente** — Em `202`, o cliente deve tentar a mesma requisição novamente após um breve intervalo até receber `200`.
+5. **Polling pelo cliente** — Em `202`, o corpo da resposta contém um campo `progress` indicando o estado do job em background:
+   - `"started"` — um novo job foi disparado para esta requisição.
+   - `"in-progress"` — um job já estava rodando quando a requisição chegou.
+
+   Clientes **devem usar o campo `progress`** para determinar o que exibir. O campo `message` é apenas informativo e pode mudar sem aviso prévio. Tente a mesma requisição novamente após um breve intervalo até receber `200`.
 
 6. **Respostas de erro** — `400` para entrada inválida; `500` para erros inesperados como timeouts no edge, que não devem ocorrer em condições normais.
 

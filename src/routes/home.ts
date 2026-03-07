@@ -1113,7 +1113,7 @@ export const HOME_HTML = `<!DOCTYPE html>
       const t = I18N[currentLang];
 
       if (res.status === 202) {
-        prependCard(buildPendingCard(slug, locale, t, false));
+        prependCard(buildPendingCard(slug, locale, t, data.progress === 'in-progress'));
       } else if (!res.ok) {
         prependCard(buildErrorCard(data.error || JSON.stringify(data), t));
       } else {
@@ -1220,7 +1220,7 @@ export const HOME_HTML = `<!DOCTYPE html>
 
       let newHtml;
       if (res.status === 202) {
-        newHtml = buildPendingCard(decodeURIComponent(slug), decodeURIComponent(locale), t, true);
+        newHtml = buildPendingCard(decodeURIComponent(slug), decodeURIComponent(locale), t, data.progress === 'in-progress');
       } else if (!res.ok) {
         newHtml = buildErrorCard(data.error || JSON.stringify(data), t);
       } else {

@@ -51,6 +51,34 @@ export const openApiSpec = {
             description:
               'Translation accepted. A background job has been dispatched (or is already running). ' +
               'Retry the same request in a few seconds to receive the translated result.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['progress', 'message'],
+                  properties: {
+                    progress: {
+                      type: 'string',
+                      enum: ['started', 'in-progress'],
+                      description:
+                        'Machine-readable state of the background job. ' +
+                        '`started` means a new job was just dispatched for this request; ' +
+                        '`in-progress` means a job was already running when the request arrived. ' +
+                        'Use this field to determine what to display to the user — **do not parse `message`** for this purpose.',
+                      example: 'started',
+                    },
+                    message: {
+                      type: 'string',
+                      description:
+                        'Human-readable description of the current state. ' +
+                        'Intended for debugging only; its wording may change without notice.',
+                      example:
+                        'The contents for fireball (pt-br) was missing, and it is being translated in the background now. Please try again in a few moments.',
+                    },
+                  },
+                },
+              },
+            },
           },
           '400': {
             description: 'Missing or invalid parameters (e.g. locale not in `xx-xx` format).',
